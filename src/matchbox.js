@@ -24,18 +24,27 @@ function launch(prefix, container, config) {
 
             var interleaveBtn = yoob.makeButton(container, "Interleave");
 
-            var output = yoob.makePre(container);
+            var output = yoob.makeDiv(container);
 
             initScanner();
 
             interleaveBtn.onclick = function() {
-                var x = parseCode(prog1ta.value);
-                var y = parseCode(prog2ta.value);
+                var x = (new Program()).init({
+                    'style': "color: black; background: white;"
+                }).parse(prog1ta.value);
+                var y = (new Program()).init({
+                    'style': "color: white; background: black;"
+                }).parse(prog2ta.value);
 
                 output.innerHTML = '';
-                var interleavings = findAllInterleavings(x, y);
+                var interleavings = findAllInterleavings(x.code, y.code);
                 for (var i = 0; i < interleavings.length; i++) {
-                    output.innerHTML += '[' + interleavings[i] + ']\n';
+                    var interleaving = interleavings[i];
+                    var s = '';
+                    for (var j = 0; j < interleaving.length; j++) {
+                        s += interleaving[j].toHTML();
+                    }
+                    output.innerHTML += (s + '<br/>');
                 }
             };
 
@@ -59,6 +68,7 @@ function initScanner() {
 
 /*
  * Each instruction is an object with some fields:
+ *   `program`: Program object it belongs to
  *   `opcode`: what the instruction does
  *   `srcType`: 'R' or 'M'
  *   `src`: location in registers or memory
@@ -68,6 +78,7 @@ function initScanner() {
 var Instruction = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
+        this.program = cfg.program;
         this.opcode = cfg.opcode;
         this.srcType = cfg.srcType;
         this.src = cfg.src;
@@ -150,36 +161,53 @@ var Instruction = function() {
             (this.destType === undefined ? '' : (', ' + this.destType + this.dest))
         );
     };
+    
+    this.toHTML = function() {
+        return (
+            '<span style="' + this.program.style + '">' +
+            this.toString() +
+            '</span>'
+        );
+    };
 };
 
-var parseCode = function(str) {
-    var lines = str.split("\n");
-    var code = [];
-    for (var i = 0; i < lines.length; i++) {
-        var instr = new Instruction();
-        if (!lines[i]) continue;
-        if (instr.parse(lines[i])) {
-            code.push(instr);
-        } else {
-            alert("Syntax error on line " + (i+1));
-        }
-    }
-    return code;
-};
+var Program = function() {
+    this.init = function(cfg) {
+        cfg = cfg || {};
+        this.style = cfg.style || "colour: black; background: white;";
+        this.code = [];
+        return this;
+    };
 
-/*
- * `code` is a list of instructions.
- */
-var interpret = function(code) {
-    var reg = {};
-    var mem = {};
-
-    for (var i = 0; i < code.length; i++) {
-        if (!code[i].execute(reg, mem)) {
-            alert('Aborted');
-            break;
+    this.parse = function(str) {
+        var lines = str.split("\n");
+        this.code = [];
+        for (var i = 0; i < lines.length; i++) {
+            var instr = (new Instruction()).init({
+                'program': this
+            });
+            if (!lines[i]) continue;
+            if (instr.parse(lines[i])) {
+                this.code.push(instr);
+            } else {
+                alert("Syntax error on line " + (i+1));
+            }
         }
-    }
+        return this;
+    };
+
+    this.run = function() {
+        var reg = {};
+        var mem = {};
+        var code = this.code;
+
+        for (var i = 0; i < code.length; i++) {
+            if (!code[i].execute(reg, mem)) {
+                alert('Aborted');
+                break;
+            }
+        }
+    };
 };
 
 /*
