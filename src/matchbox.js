@@ -17,24 +17,35 @@ function launch(prefix, container, config) {
         elem.onload = function() {
             if (++loaded < deps.length) return;
 
-            var prog1ta = yoob.makeTextArea(container, 20, 10);
-            var prog2ta = yoob.makeTextArea(container, 20, 10);
+            var matchbox = (new Matchbox()).init({});
+            var output;
 
+            var prog1Ctr = yoob.makeDiv(container);
+            prog1Ctr.style.display = 'inline-block';
+            var run1Btn = yoob.makeButton(prog1Ctr, "Run", function() {
+                output.innerHTML =  matchbox.run(prog1ta.value);
+            });
+            yoob.makeLineBreak(prog1Ctr);
+            var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 10);
             prog1ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
+
+            var prog2Ctr = yoob.makeDiv(container);
+            prog2Ctr.style.display = 'inline-block';
+            var run2Btn = yoob.makeButton(prog2Ctr, "Run", function() {
+                output.innerHTML =  matchbox.run(prog2ta.value);
+            });
+            yoob.makeLineBreak(prog2Ctr);
+            var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 10);
             prog2ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
 
-            var interleaveBtn = yoob.makeButton(container, "Interleave");
+            var findRacesBtn = yoob.makeButton(
+                container, "Find Race Conditions", function() {
+                output.innerHTML =  matchbox.findRaceConditions(
+                    prog1ta.value, prog2ta.value
+                );
+            });
 
-            var output = yoob.makeDiv(container);
-
-            initScanner();
-
-            var matchbox = (new Matchbox()).init({});
-
-            interleaveBtn.onclick = function() {
-                output.innerHTML =  matchbox.load(prog1ta.value, prog2ta.value);
-            };
-
+            output = yoob.makeDiv(container);
         };
         document.body.appendChild(elem);
     }
@@ -113,6 +124,10 @@ var Instruction = function() {
         return this;
     };
 
+    /*
+     * Given a yoob.Tape that represents shared memory, execute this
+     * Instruction.
+     */
     this.execute = function(mem) {
         if (this.opcode === 'MOV') {
             var val;
@@ -121,15 +136,15 @@ var Instruction = function() {
             } else if (this.srcType === 'R') {
                 val = this.reg.get(this.src);
             } else if (this.srcType === 'M') {
-                val = mem[this.src] || 0;
+                val = mem.get(this.src);
             } else {
                 alert("Illegal srcType: " + this.srcType);
                 return false;
             }
             if (this.destType === 'R') {
-                this.reg.put(this.get, val);
+                this.reg.put(this.dest, val);
             } else if (this.destType === 'M') {
-                mem[this.dest] = val;
+                mem.put(this.dest, val);
             } else {
                 alert("Illegal destType: " + this.destType);
                 return false;
@@ -138,9 +153,9 @@ var Instruction = function() {
         } else if (this.opcode === 'INC') {
             var val;
             if (this.srcType === 'R') {
-                this.reg.put(this.src, this.reg.get(this.src));
+                this.reg.put(this.src, this.reg.get(this.src) + 1);
             } else if (this.srcType === 'M') {
-                mem[this.src] += 1;
+                this.mem.put(this.src, this.mem.get(this.src) + 1);
             } else {
                 alert("Illegal srcType: " + this.srcType);
                 return false;
@@ -193,8 +208,7 @@ var Program = function() {
         return this;
     };
 
-    this.run = function() {
-        var mem = {};
+    this.run = function(mem) {
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
@@ -267,26 +281,53 @@ var Program = function() {
 var Matchbox = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
+        initScanner();
         return this;
     };
 
-    this.load = function(prog1text, prog2text) {
-        var regs1 = (new yoob.Tape()); //.init({});
+    this.tapeToString = function(tape) {
+        var s = '';
+        tape.foreach(function(pos, val) {
+            s += '(' + pos + "=" + val + ")";
+        });
+        return s;
+    };
+
+    this.run = function(progText) {
+        var regs = (new yoob.Tape()).init({ default: 0 });
+        regs.style = "color: white; background: black;";
+        var prog = (new Program()).parse(regs, progText);
+
+        var mem = (new yoob.Tape()).init({ default: 0 });
+
+        prog.run(mem);
+        var html = 'R:' + this.tapeToString(regs) + ", M:" + this.tapeToString(mem);
+
+        return html;
+    };
+
+    this.findRaceConditions = function(prog1text, prog2text) {
+        var regs1 = (new yoob.Tape()).init({ default: 0 });
         regs1.style = "color: black; background: white;";
         var prog1 = (new Program()).parse(regs1, prog1text);
 
-        var regs2 = (new yoob.Tape()); //.init({});
+        var regs2 = (new yoob.Tape()).init({ default: 0 });
         regs2.style = "color: white; background: black;";
         var prog2 = (new Program()).parse(regs2, prog2text);
+
+        var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = '';
         var interleavings = prog1.getAllInterleavingsWith(prog2);
         for (var i = 0; i < interleavings.length; i++) {
             var prog = interleavings[i];
-            html += prog.toHTML() + '<br/>';
-            //regs1.clear();
-            //regs2.clear();
-            prog.run();
+            html += prog.toHTML();
+            regs1.clear();
+            regs2.clear();
+            mem.clear();
+            prog.run(mem);
+            html += this.tapeToString(mem);
+            html += '<br/>';
         }
 
         return html;
