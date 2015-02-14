@@ -1,108 +1,61 @@
 "use strict";
 
-/*
- * A lexical analyzer.
- * Create a new yoob.Scanner object, then call init, passing it an
- * array of two-element arrays; first element of each of these is the
- * type of token, the second element is a regular expression (in a
- * String) which matches that token at the start of the string.  The
- * regular expression should have exactly one capturing group.
- * Then call reset, passing it the string to be scanned.
- * 
- */
-var Scanner = function() {
-  this.text = undefined;
-  this.token = undefined;
-  this.type = undefined;
-  this.error = undefined;
-  this.table = undefined;
-  this.whitespacePattern = "^[ \\t\\n\\r]*";
-
-  this.init = function(table) {
-    this.table = table;
-    return this;
-  };
-
-  this.reset = function(text) {
-    this.text = text;
-    this.token = undefined;
-    this.type = undefined;
-    this.error = undefined;
-    this.scan();
-  };
-  
-  this.scanPattern = function(pattern, type) {
-    var re = new RegExp(pattern);
-    var match = re.exec(this.text);
-    if (match === null) return false;
-    this.type = type;
-    this.token = match[1];
-    this.text = this.text.substr(match[0].length);
-    //console.log(this.type, this.token);
-    return true;
-  };
-
-  this.scan = function() {
-    this.scanPattern(this.whitespacePattern, "whitespace");
-    if (this.text.length === 0) {
-      this.token = null;
-      this.type = "EOF";
-      return;
+function launch(prefix, container, config) {
+    if (typeof container === 'string') {
+        container = document.getElementById(container);
     }
-    for (var i = 0; i < this.table.length; i++) {
-      var type = this.table[i][0];
-      var pattern = this.table[i][1];
-      if (this.scanPattern(pattern, type)) return;
+    config = config || {};
+    var deps = [
+        "scanner.js",
+        "element-factory.js"
+    ];
+    var loaded = 0;
+    for (var i = 0; i < deps.length; i++) {
+        var elem = document.createElement('script');
+        elem.src = prefix + deps[i];
+        elem.onload = function() {
+            if (++loaded < deps.length) return;
+
+            var prog1ta = yoob.makeTextArea(container, 20, 10);
+            var prog2ta = yoob.makeTextArea(container, 20, 10);
+
+            prog1ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
+            prog2ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
+
+            var interleaveBtn = yoob.makeButton(container, "Interleave");
+
+            var output = yoob.makePre(container);
+
+            initScanner();
+
+            interleaveBtn.onclick = function() {
+                var x = parseCode(prog1ta.value);
+                var y = parseCode(prog2ta.value);
+
+                output.innerHTML = '';
+                var interleavings = findAllInterleavings(x, y);
+                for (var i = 0; i < interleavings.length; i++) {
+                    output.innerHTML += '[' + interleavings[i] + ']\n';
+                }
+            };
+
+        };
+        document.body.appendChild(elem);
     }
-    if (this.scanPattern("^([\\s\\S])", "unknown character")) return;
-    // should never get here
-  };
+}
 
-  this.expect = function(token) {
-    if (this.token === token) {
-      this.scan();
-    } else {
-      this.error = "expected '" + token + "' but found '" + this.token + "'";
-    }
-  };
+var matchboxScanner;
 
-  this.on = function(token) {
-    return this.token === token;
-  };
-
-  this.onType = function(type) {
-    return this.type === type;
-  };
-
-  this.checkType = function(type) {
-    if (this.type !== type) {
-      this.error = "expected " + type + " but found " + this.type + " (" + this.token + ")"
-    }
-  };
-
-  this.expectType = function(type) {
-    this.checkType(type);
-    this.scan();
-  };
-
-  this.consume = function(token) {
-    if (this.on(token)) {
-      this.scan();
-      return true;
-    } else {
-      return false;
-    }
-  };
-
-};
-
-var matchboxScanner = (new Scanner()).init([
-    ['immediate', "^(\\d+)"],
-    ['register',  "^([rR]\\d+)"],
-    ['memory',    "^([mM]\\d+)"],
-    ['opcode',    "^([a-zA-Z]+)"],
-    ['comma',     "^(,)"]
-]);
+function initScanner() {
+    matchboxScanner = (new yoob.Scanner());
+    matchboxScanner.init([
+        ['immediate', "^(\\d+)"],
+        ['register',  "^([rR]\\d+)"],
+        ['memory',    "^([mM]\\d+)"],
+        ['opcode',    "^([a-zA-Z]+)"],
+        ['comma',     "^(,)"]
+    ]);
+}
 
 /*
  * Each instruction is an object with some fields:
