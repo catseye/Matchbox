@@ -20,8 +20,14 @@ function launch(prefix, container, config) {
             var matchbox = (new Matchbox()).init({});
             var output;
 
-            var prog1Ctr = yoob.makeDiv(container);
-            prog1Ctr.style.display = 'inline-block';
+            var makeContainer = function() {
+                var c = yoob.makeDiv(container);
+                c.style.display = 'inline-block';
+                c.style.verticalAlign = 'top';
+                return c;
+            };
+
+            var prog1Ctr = makeContainer();
             var run1Btn = yoob.makeButton(prog1Ctr, "Run", function() {
                 output.innerHTML =  matchbox.run(prog1ta.value);
             });
@@ -29,8 +35,7 @@ function launch(prefix, container, config) {
             var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 10);
             prog1ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
 
-            var prog2Ctr = yoob.makeDiv(container);
-            prog2Ctr.style.display = 'inline-block';
+            var prog2Ctr = makeContainer();
             var run2Btn = yoob.makeButton(prog2Ctr, "Run", function() {
                 output.innerHTML =  matchbox.run(prog2ta.value);
             });
@@ -38,14 +43,14 @@ function launch(prefix, container, config) {
             var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 10);
             prog2ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
 
+            var resultCtr = makeContainer();
             var findRacesBtn = yoob.makeButton(
-                container, "Find Race Conditions", function() {
+                resultCtr, "Find Race Conditions", function() {
                 output.innerHTML =  matchbox.findRaceConditions(
                     prog1ta.value, prog2ta.value
                 );
             });
-
-            output = yoob.makeDiv(container);
+            output = yoob.makeDiv(resultCtr);
         };
         document.body.appendChild(elem);
     }
@@ -318,6 +323,8 @@ var Matchbox = function() {
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = '';
+        var results = {};
+        var resultCount = 0;
         var interleavings = prog1.getAllInterleavingsWith(prog2);
         for (var i = 0; i < interleavings.length; i++) {
             var prog = interleavings[i];
@@ -326,8 +333,18 @@ var Matchbox = function() {
             regs2.clear();
             mem.clear();
             prog.run(mem);
-            html += this.tapeToString(mem);
+            var key = this.tapeToString(mem);
+            if (results[key] === undefined) {
+                results[key] = true;
+                resultCount++;
+            }
             html += '<br/>';
+        }
+
+        if (resultCount === 1) {
+            html += '<span style="color: white; background: green;">PASS</span>';
+        } else {
+            html += '<span style="color: white; background: red;">FAIL</span>';
         }
 
         return html;
