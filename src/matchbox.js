@@ -60,6 +60,10 @@ var Registers = function() {
         return this;
     };
 
+    this.clear = function() {
+        this.registers = {};
+    };
+
     this.store = function(reg, value) {
         this.registers[reg] = value;
     };
@@ -144,10 +148,21 @@ var Instruction = function() {
             }
             if (this.destType === 'R') {
                 this.reg.store(this.dest, val);
-            } else if (this.srcType === 'M') {
+            } else if (this.destType === 'M') {
                 mem[this.dest] = val;
             } else {
                 alert("Illegal destType: " + this.destType);
+                return false;
+            }
+            return true;
+        } else if (this.opcode === 'INC') {
+            var val;
+            if (this.srcType === 'R') {
+                this.reg.store(this.src, this.reg.fetch(this.src));
+            } else if (this.srcType === 'M') {
+                mem[this.src] += 1;
+            } else {
+                alert("Illegal srcType: " + this.srcType);
                 return false;
             }
             return true;
@@ -177,7 +192,7 @@ var Instruction = function() {
 var Program = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
-        this.code = [];
+        this.code = cfg.code || [];
         return this;
     };
 
@@ -208,6 +223,29 @@ var Program = function() {
                 break;
             }
         }
+    };
+
+    this.toHTML = function() {
+        var s = '';
+        var code = this.code;
+
+        for (var i = 0; i < code.length; i++) {
+            s += code[i].toHTML();
+        }
+
+        return s;
+    };
+
+    /*
+     * Given another Program object, returns a list of Program objects,
+     * with each of these being a possible interleaving of the two Programs. 
+     */
+    this.getAllInterleavingsWith = function(other) {
+        var interleavings = this.findAllInterleavings(this.code, other.code);
+        for (var i = 0; i < interleavings.length; i++) {
+            interleavings[i] = (new Program()).init({ code: interleavings[i] });
+        }
+        return interleavings;
     };
 
     /*
@@ -264,14 +302,13 @@ var Matchbox = function() {
         var prog2 = (new Program()).parse(regs2, prog2text);
         
         var html = '';
-        var interleavings = prog1.findAllInterleavings(prog1.code, prog2.code);
+        var interleavings = prog1.getAllInterleavingsWith(prog2);
         for (var i = 0; i < interleavings.length; i++) {
-            var interleaving = interleavings[i];
-            var s = '';
-            for (var j = 0; j < interleaving.length; j++) {
-                s += interleaving[j].toHTML();
-            }
-            html += (s + '<br/>');
+            var prog = interleavings[i];
+            html += prog.toHTML() + '<br/>';
+            regs1.clear();
+            regs2.clear();
+            prog.run();
         }
 
         return html;
