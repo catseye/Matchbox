@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <title>Matchbox</title>
+</head>
+<body>
+
+<h1>Matchbox</h1>
+
+<textarea id="prog1">
+MOV M0, R0
+INC R0
+MOV R0, M0
+</textarea>
+
+<textarea id="prog2">
+MOV M0, R0
+INC R0
+INC R0
+MOV R0, M0
+</textarea>
+
+<button onclick="interleave()">Interleave</button>
+
+<pre id="output">
+</pre>
+
+</body>
+<script src="../src/matchbox.js"></script>
+<script>
+"use strict";
+
+var output = document.getElementById('output');
+
+var x = parseCode(document.getElementById('prog1').value);
+var y = parseCode(document.getElementById('prog2').value);
+
+var interleave = function() {
+    output.innerHTML = '';
+    var interleavings = findAllInterleavings(x, y);
+    for (var i = 0; i < interleavings.length; i++) {
+        output.innerHTML += '[' + interleavings[i] + ']\n';
+    }
+};
+</script>
