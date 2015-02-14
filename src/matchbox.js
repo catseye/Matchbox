@@ -7,6 +7,7 @@ function launch(prefix, container, config) {
     config = config || {};
     var deps = [
         "scanner.js",
+        "tape.js",
         "element-factory.js"
     ];
     var loaded = 0;
@@ -52,30 +53,9 @@ function initScanner() {
     ]);
 }
 
-var Registers = function() {
-    this.init = function(cfg) {
-        cfg = cfg || {};
-        this.style = cfg.style || "colour: black; background: white;";
-        this.registers = {};
-        return this;
-    };
-
-    this.clear = function() {
-        this.registers = {};
-    };
-
-    this.store = function(reg, value) {
-        this.registers[reg] = value;
-    };
-
-    this.fetch = function(reg) {
-        return this.registers[reg] || 0;
-    };
-};
-
 /*
  * Each instruction is an object with some fields:
- *   `reg`: Registers context it will execute under
+ *   `reg`: yoob.Tape that it will use for its registers
  *   `opcode`: what the instruction does
  *   `srcType`: 'R' or 'M'
  *   `src`: location in registers or memory
@@ -139,7 +119,7 @@ var Instruction = function() {
             if (this.srcType === 'I') {
                 val = this.src;
             } else if (this.srcType === 'R') {
-                val = this.reg.fetch(this.src);
+                val = this.reg.get(this.src);
             } else if (this.srcType === 'M') {
                 val = mem[this.src] || 0;
             } else {
@@ -147,7 +127,7 @@ var Instruction = function() {
                 return false;
             }
             if (this.destType === 'R') {
-                this.reg.store(this.dest, val);
+                this.reg.put(this.get, val);
             } else if (this.destType === 'M') {
                 mem[this.dest] = val;
             } else {
@@ -158,7 +138,7 @@ var Instruction = function() {
         } else if (this.opcode === 'INC') {
             var val;
             if (this.srcType === 'R') {
-                this.reg.store(this.src, this.reg.fetch(this.src));
+                this.reg.put(this.src, this.reg.get(this.src));
             } else if (this.srcType === 'M') {
                 mem[this.src] += 1;
             } else {
@@ -179,7 +159,7 @@ var Instruction = function() {
             (this.destType === undefined ? '' : (', ' + this.destType + this.dest))
         );
     };
-    
+
     this.toHTML = function() {
         return (
             '<span style="' + this.reg.style + '">' +
@@ -291,23 +271,21 @@ var Matchbox = function() {
     };
 
     this.load = function(prog1text, prog2text) {
-        var regs1 = (new Registers()).init({
-            'style': "color: black; background: white;"
-        });
+        var regs1 = (new yoob.Tape()); //.init({});
+        regs1.style = "color: black; background: white;";
         var prog1 = (new Program()).parse(regs1, prog1text);
 
-        var regs2 = (new Registers()).init({
-            'style': "color: white; background: black;"
-        });
+        var regs2 = (new yoob.Tape()); //.init({});
+        regs2.style = "color: white; background: black;";
         var prog2 = (new Program()).parse(regs2, prog2text);
-        
+
         var html = '';
         var interleavings = prog1.getAllInterleavingsWith(prog2);
         for (var i = 0; i < interleavings.length; i++) {
             var prog = interleavings[i];
             html += prog.toHTML() + '<br/>';
-            regs1.clear();
-            regs2.clear();
+            //regs1.clear();
+            //regs2.clear();
             prog.run();
         }
 
