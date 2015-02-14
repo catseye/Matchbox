@@ -28,24 +28,10 @@ function launch(prefix, container, config) {
 
             initScanner();
 
-            interleaveBtn.onclick = function() {
-                var x = (new Program()).init({
-                    'style': "color: black; background: white;"
-                }).parse(prog1ta.value);
-                var y = (new Program()).init({
-                    'style': "color: white; background: black;"
-                }).parse(prog2ta.value);
+            var matchbox = (new Matchbox()).init({});
 
-                output.innerHTML = '';
-                var interleavings = findAllInterleavings(x.code, y.code);
-                for (var i = 0; i < interleavings.length; i++) {
-                    var interleaving = interleavings[i];
-                    var s = '';
-                    for (var j = 0; j < interleaving.length; j++) {
-                        s += interleaving[j].toHTML();
-                    }
-                    output.innerHTML += (s + '<br/>');
-                }
+            interleaveBtn.onclick = function() {
+                output.innerHTML =  matchbox.load(prog1ta.value, prog2ta.value);
             };
 
         };
@@ -66,9 +52,26 @@ function initScanner() {
     ]);
 }
 
+var Registers = function() {
+    this.init = function(cfg) {
+        cfg = cfg || {};
+        this.style = cfg.style || "colour: black; background: white;";
+        this.registers = {};
+        return this;
+    };
+
+    this.store = function(reg, value) {
+        this.registers[reg] = value;
+    };
+
+    this.fetch = function(reg) {
+        return this.registers[reg] || 0;
+    };
+};
+
 /*
  * Each instruction is an object with some fields:
- *   `program`: Program object it belongs to
+ *   `reg`: Registers context it will execute under
  *   `opcode`: what the instruction does
  *   `srcType`: 'R' or 'M'
  *   `src`: location in registers or memory
@@ -78,7 +81,7 @@ function initScanner() {
 var Instruction = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
-        this.program = cfg.program;
+        this.reg = cfg.reg;
         this.opcode = cfg.opcode;
         this.srcType = cfg.srcType;
         this.src = cfg.src;
@@ -126,13 +129,13 @@ var Instruction = function() {
         return this;
     };
 
-    this.execute = function(reg, mem) {
+    this.execute = function(mem) {
         if (this.opcode === 'MOV') {
             var val;
             if (this.srcType === 'I') {
                 val = this.src;
             } else if (this.srcType === 'R') {
-                val = reg[this.src] || 0;
+                val = this.reg.fetch(this.src);
             } else if (this.srcType === 'M') {
                 val = mem[this.src] || 0;
             } else {
@@ -140,7 +143,7 @@ var Instruction = function() {
                 return false;
             }
             if (this.destType === 'R') {
-                reg[this.dest] = val;
+                this.reg.store(this.dest, val);
             } else if (this.srcType === 'M') {
                 mem[this.dest] = val;
             } else {
@@ -164,7 +167,7 @@ var Instruction = function() {
     
     this.toHTML = function() {
         return (
-            '<span style="' + this.program.style + '">' +
+            '<span style="' + this.reg.style + '">' +
             this.toString() +
             '</span>'
         );
@@ -174,17 +177,16 @@ var Instruction = function() {
 var Program = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
-        this.style = cfg.style || "colour: black; background: white;";
         this.code = [];
         return this;
     };
 
-    this.parse = function(str) {
+    this.parse = function(reg, str) {
         var lines = str.split("\n");
         this.code = [];
         for (var i = 0; i < lines.length; i++) {
             var instr = (new Instruction()).init({
-                'program': this
+                'reg': reg
             });
             if (!lines[i]) continue;
             if (instr.parse(lines[i])) {
@@ -197,49 +199,81 @@ var Program = function() {
     };
 
     this.run = function() {
-        var reg = {};
         var mem = {};
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
-            if (!code[i].execute(reg, mem)) {
+            if (!code[i].execute(mem)) {
                 alert('Aborted');
                 break;
             }
         }
     };
+
+    /*
+     * All interleavings of A and B is:
+     * first element of A prepended to all interleavings of rest of A and B, plus
+     * first element of B prepended to all interleavings of A and rest of B
+     * (unless A or B is empty of course, in which case, it's just the other)
+     */
+    this.findAllInterleavings = function(a, b) {
+        if (a.length === 0) {
+            return [b];
+        } else if (b.length === 0) {
+            return [a];
+        } else {
+            var result = [];
+    
+            var fst = a[0];
+            var rst = a.concat([]);
+            rst.shift();
+            var inters = this.findAllInterleavings(rst, b);
+            for (var i = 0; i < inters.length; i++) {
+                result.push([fst].concat(inters[i]));
+            }
+    
+            var fst = b[0];
+            var rst = b.concat([]);
+            rst.shift();
+            var inters = this.findAllInterleavings(a, rst);
+            for (var i = 0; i < inters.length; i++) {
+                result.push([fst].concat(inters[i]));
+            }
+    
+            return result;
+        }
+    };
+
 };
 
-/*
- * All interleavings of A and B is:
- * first element of A prepended to all interleavings of rest of A and B, plus
- * first element of B prepended to all interleavings of A and rest of B
- * (unless A or B is empty of course, in which case, it's just the other)
- */
-var findAllInterleavings = function(a, b) {
-    if (a.length === 0) {
-        return [b];
-    } else if (b.length === 0) {
-        return [a];
-    } else {
-        var result = [];
+var Matchbox = function() {
+    this.init = function(cfg) {
+        cfg = cfg || {};
+        return this;
+    };
 
-        var fst = a[0];
-        var rst = a.concat([]);
-        rst.shift();
-        var inters = findAllInterleavings(rst, b);
-        for (var i = 0; i < inters.length; i++) {
-            result.push([fst].concat(inters[i]));
+    this.load = function(prog1text, prog2text) {
+        var regs1 = (new Registers()).init({
+            'style': "color: black; background: white;"
+        });
+        var prog1 = (new Program()).parse(regs1, prog1text);
+
+        var regs2 = (new Registers()).init({
+            'style': "color: white; background: black;"
+        });
+        var prog2 = (new Program()).parse(regs2, prog2text);
+        
+        var html = '';
+        var interleavings = prog1.findAllInterleavings(prog1.code, prog2.code);
+        for (var i = 0; i < interleavings.length; i++) {
+            var interleaving = interleavings[i];
+            var s = '';
+            for (var j = 0; j < interleaving.length; j++) {
+                s += interleaving[j].toHTML();
+            }
+            html += (s + '<br/>');
         }
 
-        var fst = b[0];
-        var rst = b.concat([]);
-        rst.shift();
-        var inters = findAllInterleavings(a, rst);
-        for (var i = 0; i < inters.length; i++) {
-            result.push([fst].concat(inters[i]));
-        }
-
-        return result;
-    }
+        return html;
+    };
 };
