@@ -195,10 +195,10 @@ var Program = function() {
         var lines = str.split("\n");
         this.code = [];
         for (var i = 0; i < lines.length; i++) {
+            if (!lines[i] || lines[i].charAt(0) === ';') continue;
             var instr = (new Instruction()).init({
                 'reg': reg
             });
-            if (!lines[i]) continue;
             if (instr.parse(lines[i])) {
                 this.code.push(instr);
             } else {
