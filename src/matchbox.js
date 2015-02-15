@@ -465,6 +465,7 @@ var Matchbox = function() {
 
         if (resultCount === 1) {
             html += '<span style="color: white; background: green;">PASS</span>';
+            html += this.tapeToString(mem);
         } else {
             html += '<span style="color: white; background: red;">FAIL</span>';
         }
