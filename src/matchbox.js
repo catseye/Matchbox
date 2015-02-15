@@ -48,12 +48,13 @@ function initScanner() {
 
 /*
  * Each instruction is an object with some fields:
- *   `reg`: yoob.Tape that it will use for its registers
  *   `opcode`: what the instruction does
  *   `srcType`: 'R' or 'M'
  *   `src`: location in registers or memory
  *   `destType`: 'R' or 'M'
  *   `dest`: location in registers or memory
+ *   `reg`: index into an array of yoob.Tapes (not stored here)
+ *          that it will use for its registers
  */
 var Instruction = function() {
     this.init = function(cfg) {
@@ -65,6 +66,17 @@ var Instruction = function() {
         this.destType = cfg.destType;
         this.dest = cfg.dest;
         return this;
+    };
+
+    this.serialize = function() {
+        return {
+            reg: this.reg,
+            opcode: this.opcode,
+            srcType: this.srcType,
+            src: this.src,
+            destType: this.destType,
+            dest: this.dest
+        };
     };
 
     this.parse = function(str) {
@@ -111,27 +123,28 @@ var Instruction = function() {
     };
 
     /*
-     * Given a yoob.Tape that represents shared memory, execute this
+     * Given a yoob.Tape that represents shared memory, and an array of
+     * yoob.Tapes that represent private register contexts, execute this
      * Instruction.  May return:
      *
      * true, to indicate that the instruction executed successfully;
      * an error string, to indicate that the instruction was malformed; or
      * null, to indicate this interleaving would not be possible.
      */
-    this.execute = function(mem) {
+    this.execute = function(mem, regs) {
         if (this.opcode === 'MOV') {
             var val;
             if (this.srcType === 'I') {
                 val = this.src;
             } else if (this.srcType === 'R') {
-                val = this.reg.get(this.src);
+                val = regs[this.reg].get(this.src);
             } else if (this.srcType === 'M') {
                 val = mem.get(this.src);
             } else {
                 return "Illegal source reference";
             }
             if (this.destType === 'R') {
-                this.reg.put(this.dest, val);
+                regs[this.reg].put(this.dest, val);
             } else if (this.destType === 'M') {
                 mem.put(this.dest, val);
             } else {
@@ -140,7 +153,7 @@ var Instruction = function() {
             return true;
         } else if (this.opcode === 'INC') {
             if (this.srcType === 'R') {
-                this.reg.put(this.src, this.reg.get(this.src) + 1);
+                regs[this.reg].put(this.src, regs[this.reg].get(this.src) + 1);
             } else if (this.srcType === 'M') {
                 mem.put(this.src, mem.get(this.src) + 1);
             } else {
@@ -169,9 +182,9 @@ var Instruction = function() {
         );
     };
 
-    this.toHTML = function() {
+    this.toHTML = function(regs) {
         return (
-            '<span style="' + this.reg.style + '">' +
+            '<span style="' + regs[this.reg].style + '">' +
             this.toString() +
             '</span>'
         );
@@ -191,9 +204,9 @@ var Program = function() {
 
     /*
      * Update all Instructions in this Program to use the given
-     * yoob.Tape as their register context.  Chainable.
+     * register context index.  Chainable.
      */
-    this.setRegisters = function(reg) {
+    this.setRegistersIndex = function(reg) {
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
@@ -210,11 +223,11 @@ var Program = function() {
      * an error string, to indicate that an instruction was malformed; or
      * null, to indicate this interleaving would not be possible.
      */
-    this.run = function(mem) {
+    this.run = function(mem, regs) {
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
-            var result = code[i].execute(mem);
+            var result = code[i].execute(mem, regs);
             if (result === null || typeof result === "string") {
                 return result;
             }
@@ -223,12 +236,12 @@ var Program = function() {
         return true;
     };
 
-    this.toHTML = function() {
+    this.toHTML = function(regs) {
         var s = '';
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
-            s += code[i].toHTML();
+            s += code[i].toHTML(regs);
         }
 
         return s;
@@ -320,14 +333,14 @@ var Matchbox = function() {
     };
 
     this.run = function(progText) {
-        var regs = (new yoob.Tape()).init({ default: 0 });
-        regs.style = "color: white; background: black;";
-        var prog = this.parse(progText).setRegisters(regs);
+        var regs = [(new yoob.Tape()).init({ default: 0 })];
+        regs[0].style = "color: white; background: black;";
+        var prog = this.parse(progText).setRegistersIndex(0);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = ''
-        var result = prog.run(mem);
+        var result = prog.run(mem, regs);
         if (typeof result === 'string') {
             html += "Error: " + result + "<br/>";
         } else if (result === null) {
@@ -339,13 +352,15 @@ var Matchbox = function() {
     };
 
     this.findRaceConditions = function(prog1text, prog2text, callback) {
-        var regs1 = (new yoob.Tape()).init({ default: 0 });
-        regs1.style = "color: black; background: white;";
-        var prog1 = this.parse(prog1text).setRegisters(regs1);
+        var regs = [
+            (new yoob.Tape()).init({ default: 0 }),
+            (new yoob.Tape()).init({ default: 0 })
+        ];
+        regs[0].style = "color: black; background: white;";
+        var prog1 = this.parse(prog1text).setRegistersIndex(0);
 
-        var regs2 = (new yoob.Tape()).init({ default: 0 });
-        regs2.style = "color: white; background: black;";
-        var prog2 = this.parse(prog2text).setRegisters(regs2);
+        regs[1].style = "color: white; background: black;";
+        var prog2 = this.parse(prog2text).setRegistersIndex(1);
 
 /*
         worker = new Worker(this.workerURL);
@@ -360,10 +375,10 @@ var Matchbox = function() {
             interleavings[i] = (new Program()).init({ code: interleavings[i] });
         }
 
-        this.runInterleavings(interleavings, regs1, regs2, callback);
+        this.runInterleavings(interleavings, regs, callback);
     };
 
-    this.runInterleavings = function(interleavings, regs1, regs2, callback) {
+    this.runInterleavings = function(interleavings, regs, callback) {
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = '';
@@ -373,11 +388,11 @@ var Matchbox = function() {
 
         for (var i = 0; i < interleavings.length; i++) {
             var prog = interleavings[i];
-            html += prog.toHTML();
-            regs1.clear();
-            regs2.clear();
+            html += prog.toHTML(regs);
+            regs[0].clear();
+            regs[1].clear();
             mem.clear();
-            var result = prog.run(mem);
+            var result = prog.run(mem, regs);
             if (typeof result === 'string') {
                 html += "Error: " + result + "<br/>";
                 break;
