@@ -58,11 +58,10 @@ Each line may contain a pragma, an instruction, a comment, or be blank.
 Comments and blank lines are ignored.  Comments begin with a `;` in the
 first column.
 
-There is one pragma, `PROG` (not yet implemented.)  It is only used
-when the source is a single text file; it specifies which program is
-being given next in the file.  If the two programs are being given
-separately, for example in individual textboxes in a GUI, it is not
-used.
+There is one pragma, `PROG`.  It is only used when the source is a single
+text file; it specifies which program is being given next in the file.
+If the two programs are being given separately, for example in individual
+textboxes in a GUI, it is not used.
 
 Instructions consist of an opcode which is followed by zero, one, or
 two data references.
@@ -98,7 +97,6 @@ TODO
 *   ability to break on first inconsistent result (for long programs)
 *   more instructions
 *   better error handling
-*   load both programs from single source file
 *   write a few words about atomic operations
 *   implement some of those classic race-condition-free algorithms w/o
     atomic operations that can be found on Wikipedia

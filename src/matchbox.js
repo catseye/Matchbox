@@ -8,6 +8,7 @@ function launch(prefix, container, config) {
     var deps = [
         "scanner.js",
         "tape.js",
+        "preset-manager.js",
         "element-factory.js"
     ];
     var loaded = 0;
@@ -17,8 +18,13 @@ function launch(prefix, container, config) {
         elem.onload = function() {
             if (++loaded < deps.length) return;
 
+            var sourceRoot = config.sourceRoot || '../eg/';
+
             var matchbox = (new Matchbox()).init({});
             var output;
+
+            var controlPanel = yoob.makeDiv(container);
+            var presetSelect = yoob.makeSelect(controlPanel, "Preset:", []);
 
             var makeContainer = function() {
                 var c = yoob.makeDiv(container);
@@ -33,7 +39,6 @@ function launch(prefix, container, config) {
             });
             yoob.makeLineBreak(prog1Ctr);
             var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 10);
-            prog1ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
 
             var prog2Ctr = makeContainer();
             var run2Btn = yoob.makeButton(prog2Ctr, "Run", function() {
@@ -41,7 +46,6 @@ function launch(prefix, container, config) {
             });
             yoob.makeLineBreak(prog2Ctr);
             var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 10);
-            prog2ta.value = "MOV M0, R0\nINC R0\nMOV R0, M0";
 
             var resultCtr = makeContainer();
             var findRacesBtn = yoob.makeButton(
@@ -51,6 +55,21 @@ function launch(prefix, container, config) {
                 );
             });
             output = yoob.makeDiv(resultCtr);
+
+            var p = new yoob.PresetManager();
+            p.init({
+                'selectElem': presetSelect,
+                'setPreset': function(n) {
+                    matchbox.loadSourceFromURL(sourceRoot + n, function(p1, p2) {
+                        prog1ta.value = p1;
+                        prog2ta.value = p2;
+                    });
+                }
+            });
+            p.add('basic-race.mbox');
+            p.add('basic-no-race.mbox');
+            p.select('basic-race.mbox');
+
         };
         document.body.appendChild(elem);
     }
@@ -160,7 +179,7 @@ var Instruction = function() {
             if (this.srcType === 'R') {
                 this.reg.put(this.src, this.reg.get(this.src) + 1);
             } else if (this.srcType === 'M') {
-                this.mem.put(this.src, this.mem.get(this.src) + 1);
+                mem.put(this.src, mem.get(this.src) + 1);
             } else {
                 alert("Illegal srcType: " + this.srcType);
                 return false;
@@ -337,6 +356,33 @@ var Matchbox = function() {
             texts[progNum].push(str);
         }
         return [texts[0].join("\n"), texts[1].join("\n")];
+    };
+
+    /*
+     * Cribbed from yoob.SourceManager
+     */
+    this.loadSourceFromURL = function(url, successCallback, errorCallback) {
+        var http = new XMLHttpRequest();
+        var $this = this;
+        if (!errorCallback) {
+            errorCallback = function(http) {
+                $this.loadSource(
+                    "Error: could not load " + url + ": " + http.statusText
+                );
+            }
+        }
+        http.open("get", url, true);
+        http.onload = function(e) {
+            if (http.readyState === 4 && http.responseText) {
+                if (http.status === 200) {
+                    var progs = $this.splitIntoProgramTexts(http.responseText);
+                    successCallback(progs[0], progs[1]);
+                } else {
+                    errorCallback(http);
+                }
+            }
+        };
+        http.send(null);
     };
 
     this.run = function(progText) {
