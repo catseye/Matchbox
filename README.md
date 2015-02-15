@@ -1,7 +1,7 @@
 Matchbox
 ========
 
-Matchbox is a tool which finds race conditions.
+Matchbox is a tool which finds [race conditions][].
 It is currently a work in progress.
 
 It is not a production-quality tool; rather, it is more of a demonstration.
@@ -89,12 +89,15 @@ location to another location in memory or to a register.
 It increments the value stored at the given register or memory
 location.
 
-`WAIT` (not yet implemented) takes a memory reference and an immediate
-value, and simulates a busy wait for that memory location to contain
-that value.  Note that this is merely a simulation: if the memory
-location does not contain that value, the program run is merely discarded.
+`WAIT` takes a memory reference and an immediate value, and simulates
+a busy wait for that memory location to contain that value.  Note that
+this is merely a simulation: if the memory location does not contain that
+value when `WAIT` is executed, the program run is merely discarded.
+
 This is justified on the grounds that, if it _were_ a busy wait for that
 value, the present interleaving would simply never have occurred.
+(This doesn't entirely make sense if `WAIT` is the final instruction in
+a program, though.)
 
 Discussion
 ----------
@@ -142,11 +145,17 @@ with direct simulation like we're doing here.
 TODO
 ----
 
-*   animate
-*   discard impossible run traces (once we have WAIT)
+*   animate and basically display it all more nicely
 *   ability to break on first inconsistent result (for long programs)
-*   more instructions
-*   better error handling
-*   write a few words about atomic operations
-*   implement some of those classic race-condition-free algorithms w/o
-    atomic operations that can be found on Wikipedia
+*   add sufficient instructions to implement:
+    
+    *   [Peterson's algorithm][]
+    *   maybe [Szymanski's algorithm][]
+    
+    [Dekker's algorithm][] will not be possible, because it contains a
+    nested `while` loop.
+
+[race conditions]: http://en.wikipedia.org/wiki/Race_condition
+[Dekker's algorithm]: http://en.wikipedia.org/wiki/Dekker%27s_algorithm
+[Peterson's algorithm]: http://en.wikipedia.org/wiki/Peterson%27s_algorithm
+[Szymanski's algorithm]: http://en.wikipedia.org/wiki/Szymanski%27s_Algorithm

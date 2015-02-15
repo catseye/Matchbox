@@ -261,6 +261,8 @@ var Program = function() {
                 return result;
             }
         }
+
+        return true;
     };
 
     this.toHTML = function() {
@@ -418,7 +420,7 @@ var Matchbox = function() {
         } else if (result === null) {
             html += "Program stopped on WAIT<br/>";
         }
-        var html = 'R:' + this.tapeToString(regs) + ", M:" + this.tapeToString(mem);
+        html += 'R:' + this.tapeToString(regs) + ", M:" + this.tapeToString(mem);
 
         return html;
     };
@@ -444,11 +446,18 @@ var Matchbox = function() {
             regs1.clear();
             regs2.clear();
             mem.clear();
-            prog.run(mem);
-            var key = this.tapeToString(mem);
-            if (results[key] === undefined) {
-                results[key] = true;
-                resultCount++;
+            var result = prog.run(mem);
+            if (typeof result === 'string') {
+                html += "Error: " + result + "<br/>";
+                break;
+            } else if (result === null) {
+                html += "(can't happen)";
+            } else {
+                var key = this.tapeToString(mem);
+                if (results[key] === undefined) {
+                    results[key] = true;
+                    resultCount++;
+                }
             }
             html += '<br/>';
         }
