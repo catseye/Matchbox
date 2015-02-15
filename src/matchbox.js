@@ -196,21 +196,8 @@ var Program = function() {
         return this;
     };
 
-    this.parse = function(reg, str) {
-        var lines = str.split("\n");
-        this.code = [];
-        for (var i = 0; i < lines.length; i++) {
-            if (!lines[i] || lines[i].charAt(0) === ';') continue;
-            var instr = (new Instruction()).init({
-                'reg': reg
-            });
-            if (instr.parse(lines[i])) {
-                this.code.push(instr);
-            } else {
-                alert("Syntax error on line " + (i+1));
-            }
-        }
-        return this;
+    this.addInstruction = function(instr) {
+        this.code.push(instr);
     };
 
     this.run = function(mem) {
@@ -298,10 +285,28 @@ var Matchbox = function() {
         return s;
     };
 
+    this.parse = function(prog, reg, str) {
+        var lines = str.split("\n");
+        this.code = [];
+        for (var i = 0; i < lines.length; i++) {
+            if (!lines[i] || lines[i].charAt(0) === ';') continue;
+            var instr = (new Instruction()).init({
+                'reg': reg
+            });
+            if (instr.parse(lines[i])) {
+                prog.addInstruction(instr);
+            } else {
+                alert("Syntax error on line " + (i+1));
+            }
+        }
+        return this;
+    };
+
     this.run = function(progText) {
         var regs = (new yoob.Tape()).init({ default: 0 });
         regs.style = "color: white; background: black;";
-        var prog = (new Program()).parse(regs, progText);
+        var prog = (new Program()).init({});
+        this.parse(prog, regs, progText);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
@@ -314,11 +319,13 @@ var Matchbox = function() {
     this.findRaceConditions = function(prog1text, prog2text) {
         var regs1 = (new yoob.Tape()).init({ default: 0 });
         regs1.style = "color: black; background: white;";
-        var prog1 = (new Program()).parse(regs1, prog1text);
+        var prog1 = (new Program()).init({});
+        this.parse(prog1, regs1, prog1text);
 
         var regs2 = (new yoob.Tape()).init({ default: 0 });
         regs2.style = "color: white; background: black;";
-        var prog2 = (new Program()).parse(regs2, prog2text);
+        var prog2 = (new Program()).init({});
+        this.parse(prog2, regs2, prog2text);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
