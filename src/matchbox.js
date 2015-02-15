@@ -134,7 +134,11 @@ var Instruction = function() {
                 s.scan();
             }
             if (s.consume(',')) {
-                if (s.onType('register')) {
+                if (s.onType('immediate')) {
+                    this.destType = 'I';
+                    this.dest = parseInt(s.token, 10);
+                    s.scan();
+                } else if (s.onType('register')) {
                     this.destType = 'R';
                     this.dest = parseInt(s.token.substr(1), 10);
                     s.scan();
@@ -150,7 +154,11 @@ var Instruction = function() {
 
     /*
      * Given a yoob.Tape that represents shared memory, execute this
-     * Instruction.
+     * Instruction.  May return:
+     *
+     * true, to indicate that the instruction executed successfully;
+     * an error string, to indicate that the instruction was malformed; or
+     * null, to indicate this interleaving would not be possible.
      */
     this.execute = function(mem) {
         if (this.opcode === 'MOV') {
@@ -162,32 +170,36 @@ var Instruction = function() {
             } else if (this.srcType === 'M') {
                 val = mem.get(this.src);
             } else {
-                alert("Illegal srcType: " + this.srcType);
-                return false;
+                return "Illegal source reference";
             }
             if (this.destType === 'R') {
                 this.reg.put(this.dest, val);
             } else if (this.destType === 'M') {
                 mem.put(this.dest, val);
             } else {
-                alert("Illegal destType: " + this.destType);
-                return false;
+                return "Illegal destination reference";
             }
             return true;
         } else if (this.opcode === 'INC') {
-            var val;
             if (this.srcType === 'R') {
                 this.reg.put(this.src, this.reg.get(this.src) + 1);
             } else if (this.srcType === 'M') {
                 mem.put(this.src, mem.get(this.src) + 1);
             } else {
-                alert("Illegal srcType: " + this.srcType);
-                return false;
+                return "Illegal source reference";
+            }
+            return true;
+        } else if (this.opcode === 'WAIT') {
+            if (this.srcType === 'M' && this.destType === 'I') {
+                if (mem.get(this.src) !== this.dest) {
+                    return null;
+                }
+            } else {
+                return "Illegal source/destination reference";
             }
             return true;
         } else {
-            alert("Illegal opcode: " + this.opcode);
-            return false;
+            return "Illegal opcode";
         }
     };
 
@@ -233,13 +245,20 @@ var Program = function() {
         return this;
     };
 
+    /*
+     * May return:
+     *
+     * true, to indicate that the program executed successfully;
+     * an error string, to indicate that an instruction was malformed; or
+     * null, to indicate this interleaving would not be possible.
+     */
     this.run = function(mem) {
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
-            if (!code[i].execute(mem)) {
-                alert('Aborted');
-                break;
+            var result = code[i].execute(mem);
+            if (result === null || typeof result === "string") {
+                return result;
             }
         }
     };
@@ -392,7 +411,13 @@ var Matchbox = function() {
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
-        prog.run(mem);
+        var html = ''
+        var result = prog.run(mem);
+        if (typeof result === 'string') {
+            html += "Error: " + result + "<br/>";
+        } else if (result === null) {
+            html += "Program stopped on WAIT<br/>";
+        }
         var html = 'R:' + this.tapeToString(regs) + ", M:" + this.tapeToString(mem);
 
         return html;
