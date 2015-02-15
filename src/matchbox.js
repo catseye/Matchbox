@@ -202,7 +202,7 @@ var Program = function() {
 
     /*
      * Update all Instructions in this Program to use the given
-     * yoob.Tape as their register context.
+     * yoob.Tape as their register context.  Chainable.
      */
     this.setRegisters = function(reg) {
         var code = this.code;
@@ -210,6 +210,8 @@ var Program = function() {
         for (var i = 0; i < code.length; i++) {
             code[i].reg = reg;
         }
+
+        return this;
     };
 
     this.run = function(mem) {
@@ -296,53 +298,51 @@ var Matchbox = function() {
         return s;
     };
 
-    this.parse = function(str, numProgs) {
-        numProgs = numProgs || 1;
-        var progs = []
-        for (var i = 0; i < numProgs; i++) {
-            progs.push((new Program()).init({}));
-        }
-        var progNum = 0;
+    this.parse = function(str) {
+        var prog = (new Program()).init();
         var lines = str.split("\n");
         this.code = [];
         for (var i = 0; i < lines.length; i++) {
             if (!lines[i] || lines[i].charAt(0) === ';') continue;
-            var progPragma = undefined;
-            if (numProgs > 1) {
-                this.parseProgPragma(lines[i]);
-            }
-            if (typeof progPragma === 'number') {
-                progNum = progPragma;
+            var instr = (new Instruction()).init();
+            if (instr.parse(lines[i])) {
+                prog.addInstruction(instr);
             } else {
-                var instr = (new Instruction()).init();
-                if (instr.parse(lines[i])) {
-                    progs[progNum].addInstruction(instr);
-                } else {
-                    alert("Syntax error on line " + (i+1));
-                }
+                alert("Syntax error on line " + (i+1));
             }
         }
-        return progs;
+        return prog;
     };
 
-    this.parseProgPragma = function(str) {
+    /*
+     * Given a full Matchbox source (containing multiple programs,)
+     * split into individual program texts, retaining comments and such.
+     */
+    this.splitIntoProgramTexts = function(str) {
         var s = matchboxScanner;
-        s.reset(str);
-        if (s.onType('opcode') && s.token === 'PROG') {
-            s.scan();
-            if (s.onType('immediate')) {
-                return parseInt(s.token, 10);
+        var texts = [[], []];
+        var progNum = 0;
+        var lines = str.split("\n");
+        this.code = [];
+        for (var i = 0; i < lines.length; i++) {
+            var str = lines[i];
+            s.reset(str);
+            if (s.onType('opcode') && s.token === 'PROG') {
+                s.scan();
+                if (s.onType('immediate')) {
+                    progNum = parseInt(s.token, 10);
+                    continue;
+                }
             }
+            texts[progNum].push(str);
         }
-        return undefined;
+        return [texts[0].join("\n"), texts[1].join("\n")];
     };
 
     this.run = function(progText) {
         var regs = (new yoob.Tape()).init({ default: 0 });
         regs.style = "color: white; background: black;";
-        var progs = this.parse(progText, 1);
-        var prog = progs[0];
-        prog.setRegisters(regs);
+        var prog = this.parse(progText).setRegisters(regs);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
@@ -355,15 +355,11 @@ var Matchbox = function() {
     this.findRaceConditions = function(prog1text, prog2text) {
         var regs1 = (new yoob.Tape()).init({ default: 0 });
         regs1.style = "color: black; background: white;";
-        var progs1 = this.parse(prog1text);
-        var prog1 = progs1[0];
-        prog1.setRegisters(regs1);
+        var prog1 = this.parse(prog1text).setRegisters(regs1);
 
         var regs2 = (new yoob.Tape()).init({ default: 0 });
         regs2.style = "color: white; background: black;";
-        var progs2 = this.parse(prog2text);
-        var prog2 = progs2[0];
-        prog2.setRegisters(regs2);
+        var prog2 = this.parse(prog2text).setRegisters(regs2);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
