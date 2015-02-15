@@ -200,6 +200,18 @@ var Program = function() {
         this.code.push(instr);
     };
 
+    /*
+     * Update all Instructions in this Program to use the given
+     * yoob.Tape as their register context.
+     */
+    this.setRegisters = function(reg) {
+        var code = this.code;
+
+        for (var i = 0; i < code.length; i++) {
+            code[i].reg = reg;
+        }
+    };
+
     this.run = function(mem) {
         var code = this.code;
 
@@ -267,7 +279,6 @@ var Program = function() {
             return result;
         }
     };
-
 };
 
 var Matchbox = function() {
@@ -285,7 +296,7 @@ var Matchbox = function() {
         return s;
     };
 
-    this.parse = function(reg, str, numProgs) {
+    this.parse = function(str, numProgs) {
         numProgs = numProgs || 1;
         var progs = []
         for (var i = 0; i < numProgs; i++) {
@@ -303,7 +314,7 @@ var Matchbox = function() {
             if (typeof progPragma === 'number') {
                 progNum = progPragma;
             } else {
-                var instr = (new Instruction()).init({ 'reg': reg });
+                var instr = (new Instruction()).init();
                 if (instr.parse(lines[i])) {
                     progs[progNum].addInstruction(instr);
                 } else {
@@ -329,11 +340,13 @@ var Matchbox = function() {
     this.run = function(progText) {
         var regs = (new yoob.Tape()).init({ default: 0 });
         regs.style = "color: white; background: black;";
-        var progs = this.parse(regs, progText, 1);
+        var progs = this.parse(progText, 1);
+        var prog = progs[0];
+        prog.setRegisters(regs);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
-        progs[0].run(mem);
+        prog.run(mem);
         var html = 'R:' + this.tapeToString(regs) + ", M:" + this.tapeToString(mem);
 
         return html;
@@ -342,13 +355,15 @@ var Matchbox = function() {
     this.findRaceConditions = function(prog1text, prog2text) {
         var regs1 = (new yoob.Tape()).init({ default: 0 });
         regs1.style = "color: black; background: white;";
-        var progs1 = this.parse(regs1, prog1text);
+        var progs1 = this.parse(prog1text);
         var prog1 = progs1[0];
+        prog1.setRegisters(regs1);
 
         var regs2 = (new yoob.Tape()).init({ default: 0 });
         regs2.style = "color: white; background: black;";
-        var progs2 = this.parse(regs2, prog2text);
+        var progs2 = this.parse(prog2text);
         var prog2 = progs2[0];
+        prog2.setRegisters(regs2);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
 
