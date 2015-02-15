@@ -1,7 +1,40 @@
 "use strict";
 
-var matchboxScanner;
+/*
+ * All interleavings of A and B is:
+ * first element of A prepended to all interleavings of rest of A and B, plus
+ * first element of B prepended to all interleavings of A and rest of B
+ * (unless A or B is empty of course, in which case, it's just the other)
+ */
+function findAllInterleavings(a, b) {
+    if (a.length === 0) {
+        return [b];
+    } else if (b.length === 0) {
+        return [a];
+    } else {
+        var result = [];
 
+        var fst = a[0];
+        var rst = a.concat([]);
+        rst.shift();
+        var inters = findAllInterleavings(rst, b);
+        for (var i = 0; i < inters.length; i++) {
+            result.push([fst].concat(inters[i]));
+        }
+
+        var fst = b[0];
+        var rst = b.concat([]);
+        rst.shift();
+        var inters = findAllInterleavings(a, rst);
+        for (var i = 0; i < inters.length; i++) {
+            result.push([fst].concat(inters[i]));
+        }
+
+        return result;
+    }
+}
+
+var matchboxScanner;
 function initScanner() {
     matchboxScanner = (new yoob.Scanner());
     matchboxScanner.init([
@@ -200,61 +233,12 @@ var Program = function() {
 
         return s;
     };
-
-    /*
-     * Given another Program object, returns a list of Program objects,
-     * with each of these being a possible interleaving of the two Programs. 
-     */
-    this.getAllInterleavingsWith = function(other) {
-        var interleavings = this.findAllInterleavings(this.code, other.code);
-        for (var i = 0; i < interleavings.length; i++) {
-            interleavings[i] = (new Program()).init({ code: interleavings[i] });
-        }
-        return interleavings;
-    };
-
-    /*
-     * All interleavings of A and B is:
-     * first element of A prepended to all interleavings of rest of A and B, plus
-     * first element of B prepended to all interleavings of A and rest of B
-     * (unless A or B is empty of course, in which case, it's just the other)
-     */
-    this.findAllInterleavings = function(a, b) {
-        if (a.length === 0) {
-            return [b];
-        } else if (b.length === 0) {
-            return [a];
-        } else {
-            var result = [];
-    
-            var fst = a[0];
-            var rst = a.concat([]);
-            rst.shift();
-            var inters = this.findAllInterleavings(rst, b);
-            for (var i = 0; i < inters.length; i++) {
-                result.push([fst].concat(inters[i]));
-            }
-    
-            var fst = b[0];
-            var rst = b.concat([]);
-            rst.shift();
-            var inters = this.findAllInterleavings(a, rst);
-            for (var i = 0; i < inters.length; i++) {
-                result.push([fst].concat(inters[i]));
-            }
-    
-            return result;
-        }
-    };
 };
 
 var Matchbox = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
         this.workerURL = cfg.workerURL;
-        if (this.workerURL) {
-            this.worker = new Worker(this.workerURL);
-        }
         initScanner();
         return this;
     };
@@ -354,7 +338,7 @@ var Matchbox = function() {
         return html;
     };
 
-    this.findRaceConditions = function(prog1text, prog2text) {
+    this.findRaceConditions = function(prog1text, prog2text, callback) {
         var regs1 = (new yoob.Tape()).init({ default: 0 });
         regs1.style = "color: black; background: white;";
         var prog1 = this.parse(prog1text).setRegisters(regs1);
@@ -363,13 +347,30 @@ var Matchbox = function() {
         regs2.style = "color: white; background: black;";
         var prog2 = this.parse(prog2text).setRegisters(regs2);
 
+/*
+        worker = new Worker(this.workerURL);
+        worker.addEventListener('message', function(e) {
+            $this.output.innerHTML = e.data;
+        });
+        this.worker.postMessage(["eval", depict(this.ast)]);
+*/
+
+        var interleavings = findAllInterleavings(prog1.code, prog2.code);
+        for (var i = 0; i < interleavings.length; i++) {
+            interleavings[i] = (new Program()).init({ code: interleavings[i] });
+        }
+
+        this.runInterleavings(interleavings, regs1, regs2, callback);
+    };
+
+    this.runInterleavings = function(interleavings, regs1, regs2, callback) {
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = '';
         var results = {};
         var resultCount = 0;
         var canonicalResultKey;
-        var interleavings = prog1.getAllInterleavingsWith(prog2);
+
         for (var i = 0; i < interleavings.length; i++) {
             var prog = interleavings[i];
             html += prog.toHTML();
@@ -400,6 +401,6 @@ var Matchbox = function() {
             html += '<span style="color: white; background: red;">FAIL</span>';
         }
 
-        return html;
+        callback(html);
     };
 };

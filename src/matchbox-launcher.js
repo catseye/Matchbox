@@ -52,8 +52,10 @@ function launch(prefix, container, config) {
             var resultCtr = makeContainer();
             var findRacesBtn = yoob.makeButton(
                 resultCtr, "Find Race Conditions", function() {
-                output.innerHTML =  matchbox.findRaceConditions(
-                    prog1ta.value, prog2ta.value
+                matchbox.findRaceConditions(
+                    prog1ta.value, prog2ta.value, function(html) {
+                        output.innerHTML = html;
+                    }
                 );
             });
             output = yoob.makeDiv(resultCtr);
