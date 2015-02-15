@@ -440,6 +440,7 @@ var Matchbox = function() {
         var html = '';
         var results = {};
         var resultCount = 0;
+        var canonicalResultKey;
         var interleavings = prog1.getAllInterleavingsWith(prog2);
         for (var i = 0; i < interleavings.length; i++) {
             var prog = interleavings[i];
@@ -455,6 +456,7 @@ var Matchbox = function() {
                 html += "(can't happen)";
             } else {
                 var key = this.tapeToString(mem);
+                canonicalResultKey = canonicalResultKey || key;
                 if (results[key] === undefined) {
                     results[key] = true;
                     resultCount++;
@@ -465,7 +467,7 @@ var Matchbox = function() {
 
         if (resultCount === 1) {
             html += '<span style="color: white; background: green;">PASS</span>';
-            html += this.tapeToString(mem);
+            html += canonicalResultKey;
         } else {
             html += '<span style="color: white; background: red;">FAIL</span>';
         }
