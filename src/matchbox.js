@@ -1,39 +1,5 @@
 "use strict";
 
-/*
- * All interleavings of A and B is:
- * first element of A prepended to all interleavings of rest of A and B, plus
- * first element of B prepended to all interleavings of A and rest of B
- * (unless A or B is empty of course, in which case, it's just the other)
- */
-function findAllInterleavings(a, b) {
-    if (a.length === 0) {
-        return [b];
-    } else if (b.length === 0) {
-        return [a];
-    } else {
-        var result = [];
-
-        var fst = a[0];
-        var rst = a.concat([]);
-        rst.shift();
-        var inters = findAllInterleavings(rst, b);
-        for (var i = 0; i < inters.length; i++) {
-            result.push([fst].concat(inters[i]));
-        }
-
-        var fst = b[0];
-        var rst = b.concat([]);
-        rst.shift();
-        var inters = findAllInterleavings(a, rst);
-        for (var i = 0; i < inters.length; i++) {
-            result.push([fst].concat(inters[i]));
-        }
-
-        return result;
-    }
-}
-
 var matchboxScanner;
 function initScanner() {
     matchboxScanner = (new yoob.Scanner());
@@ -195,6 +161,32 @@ var Program = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
         this.code = cfg.code || [];
+        return this;
+    };
+
+    this.serialize = function() {
+        var list = [];
+        var code = this.code;
+
+        for (var i = 0; i < code.length; i++) {
+            list.push(code[i].serialize());
+        }
+
+        return list;
+    };
+
+    /*
+     * Initialize this Program from a list of serialized Instruction objects.
+     * Chainable.
+     */
+    this.reconstitute = function(list) {
+        var code = [];
+
+        for (var i = 0; i < list.length; i++) {
+            code.push((new Instruction()).init(list[i]));
+        }
+
+        this.code = code;
         return this;
     };
 
@@ -362,23 +354,20 @@ var Matchbox = function() {
         regs[1].style = "color: white; background: black;";
         var prog2 = this.parse(prog2text).setRegistersIndex(1);
 
-/*
-        worker = new Worker(this.workerURL);
+        var $this = this;
+        var worker = new Worker(this.workerURL);
         worker.addEventListener('message', function(e) {
-            $this.output.innerHTML = e.data;
+            var interleavings = e.data;
+            /* reconstitute Programs from interleavings */
+            for (var i = 0; i < interleavings.length; i++) {
+                interleavings[i] = (new Program()).reconstitute(interleavings[i]);
+            }
+            $this.runInterleavedPrograms(interleavings, regs, callback);
         });
-        this.worker.postMessage(["eval", depict(this.ast)]);
-*/
-
-        var interleavings = findAllInterleavings(prog1.code, prog2.code);
-        for (var i = 0; i < interleavings.length; i++) {
-            interleavings[i] = (new Program()).init({ code: interleavings[i] });
-        }
-
-        this.runInterleavings(interleavings, regs, callback);
+        worker.postMessage(["interleave", prog1.serialize(), prog2.serialize()]);
     };
 
-    this.runInterleavings = function(interleavings, regs, callback) {
+    this.runInterleavedPrograms = function(interleavings, regs, callback) {
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = '';
