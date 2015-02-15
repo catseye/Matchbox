@@ -1,0 +1,37 @@
+PROG 0
+; M0 is flag[0]
+; M1 is flag[1]
+; M2 is turn
+; M3 is the target
+
+MOV 1, M0
+MOV 1, M2
+WAIT M1, 0
+WAIT M2, 0
+
+; begin c.s.
+MOV M3, R0
+INC R0
+MOV R0, M3
+; end c.s.
+
+MOV 0, M0
+
+PROG 1
+; M0 is flag[0]
+; M1 is flag[1]
+; M2 is turn
+; M3 is the target
+
+MOV 1, M1
+MOV 0, M2
+WAIT M0, 0
+WAIT M2, 0
+
+; begin c.s.
+MOV M3, R0
+INC R0
+MOV R0, M3
+; end c.s.
+
+MOV 0, M1

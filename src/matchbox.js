@@ -38,14 +38,14 @@ function launch(prefix, container, config) {
                 output.innerHTML =  matchbox.run(prog1ta.value);
             });
             yoob.makeLineBreak(prog1Ctr);
-            var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 10);
+            var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 20);
 
             var prog2Ctr = makeContainer();
             var run2Btn = yoob.makeButton(prog2Ctr, "Run", function() {
                 output.innerHTML =  matchbox.run(prog2ta.value);
             });
             yoob.makeLineBreak(prog2Ctr);
-            var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 10);
+            var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 20);
 
             var resultCtr = makeContainer();
             var findRacesBtn = yoob.makeButton(
@@ -68,6 +68,7 @@ function launch(prefix, container, config) {
             });
             p.add('basic-race.mbox');
             p.add('basic-no-race.mbox');
+            p.add('petersons-no-race.mbox');
             p.select('basic-race.mbox');
 
         };

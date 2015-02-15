@@ -99,6 +99,22 @@ value, the present interleaving would simply never have occurred.
 (This doesn't entirely make sense if `WAIT` is the final instruction in
 a program, though.)
 
+Advanced Examples
+-----------------
+
+There are some classic synchronization algorithms in computer science.
+We can try some of them here, and see if Matchbox can tell us if they
+work.
+
+[Peterson's algorithm][] is implemented in `eg/petersons-no-race.mbox`.
+Inside the critical sections, the programs shown above, the ones which
+have the race condition, are embedded.  Matchbox takes a while to find
+all the interleavings, but once it does, it confirms that there is no
+race condition.
+
+[Dekker's algorithm][] will not be possible to implement in Matchbox,
+because it contains a nested `while` loop (see "Limitations", below.)
+
 Discussion
 ----------
 
@@ -147,13 +163,7 @@ TODO
 
 *   animate and basically display it all more nicely
 *   ability to break on first inconsistent result (for long programs)
-*   add sufficient instructions to implement:
-    
-    *   [Peterson's algorithm][]
-    *   maybe [Szymanski's algorithm][]
-    
-    [Dekker's algorithm][] will not be possible, because it contains a
-    nested `while` loop.
+*   add sufficient instructions to implement [Szymanski's algorithm][]?
 
 [race conditions]: http://en.wikipedia.org/wiki/Race_condition
 [Dekker's algorithm]: http://en.wikipedia.org/wiki/Dekker%27s_algorithm
