@@ -233,7 +233,7 @@ var Program = function() {
         var code = this.code;
 
         for (var i = 0; i < code.length; i++) {
-            s += code[i].toHTML(regs);
+            s += code[i].toHTML(regs) + '<br/>';
         }
 
         return s;
@@ -362,9 +362,55 @@ var Matchbox = function() {
             for (var i = 0; i < interleavings.length; i++) {
                 interleavings[i] = (new Program()).reconstitute(interleavings[i]);
             }
-            $this.runInterleavedPrograms(interleavings, regs, callback);
+            $this.startRunningInterleavedPrograms(interleavings, regs, callback);
         });
         worker.postMessage(["interleave", prog1.serialize(), prog2.serialize()]);
+    };
+
+    this.startRunningInterleavedPrograms = function(interleavings, regs, callback) {
+        if (this.intervalId !== undefined)
+            return;
+        var i = 0;
+        var $this = this;
+        this.intervalId = setInterval(function() {
+            if (i >= interleavings.length) {
+                clearInterval($this.intervalId);
+                $this.intervalId = undefined;
+                return;
+            }
+            $this.runInterleavedProgram(interleavings[i], regs, callback);
+            i += 1;
+        }, 1000/60);
+    };
+
+    this.runInterleavedProgram = function(prog, regs, callback) {
+        var mem = (new yoob.Tape()).init({ default: 0 });
+
+        var html = '';
+
+        html += prog.toHTML(regs);
+        regs[0].clear();
+        regs[1].clear();
+        mem.clear();
+        var result = prog.run(mem, regs);
+        if (typeof result === 'string') {
+            html += "Error: " + result + "<br/>";
+            //break;
+        } else if (result === null) {
+            html += "(can't happen)";
+        } else {
+            /*
+            var key = this.tapeToString(mem);
+            canonicalResultKey = canonicalResultKey || key;
+            if (results[key] === undefined) {
+                results[key] = true;
+                resultCount++;
+            }
+            */
+        }
+        html += '<br/>';
+
+        callback(html);
     };
 
     this.runInterleavedPrograms = function(interleavings, regs, callback) {
