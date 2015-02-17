@@ -2,14 +2,15 @@
 
 var matchboxScanner;
 function initScanner() {
-    matchboxScanner = (new yoob.Scanner());
-    matchboxScanner.init([
+    matchboxScanner = (new yoob.Scanner()).init({
+      table: [
         ['immediate', "^(\\d+)"],
         ['register',  "^([rR]\\d+)"],
         ['memory',    "^([mM]\\d+)"],
         ['opcode',    "^([a-zA-Z]+)"],
         ['comma',     "^(,)"]
-    ]);
+      ]
+    });
 }
 
 /*
