@@ -245,6 +245,10 @@ var Matchbox = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
         this.workerURL = cfg.workerURL;
+        this.progStyles = cfg.progStyles || [
+            'color: black; background: white;',
+            'padding-left: 2em; color: black; background: white;',
+        ];
         initScanner();
         return this;
     };
@@ -327,7 +331,7 @@ var Matchbox = function() {
 
     this.run = function(progText) {
         var regs = [(new yoob.Tape()).init({ default: 0 })];
-        regs[0].style = "color: white; background: black;";
+        regs[0].style = this.progStyles[0];
         var prog = this.parse(progText).setRegistersIndex(0);
 
         var mem = (new yoob.Tape()).init({ default: 0 });
@@ -339,7 +343,7 @@ var Matchbox = function() {
         } else if (result === null) {
             html += "Program stopped on WAIT<br/>";
         }
-        html += 'R:' + this.tapeToString(regs) + ", M:" + this.tapeToString(mem);
+        html += 'R:' + this.tapeToString(regs[0]) + ", M:" + this.tapeToString(mem);
 
         return html;
     };
@@ -349,10 +353,10 @@ var Matchbox = function() {
             (new yoob.Tape()).init({ default: 0 }),
             (new yoob.Tape()).init({ default: 0 })
         ];
-        regs[0].style = "color: black; background: white;";
+        regs[0].style = this.progStyles[0];
         var prog1 = this.parse(prog1text).setRegistersIndex(0);
 
-        regs[1].style = "color: white; background: black;";
+        regs[0].style = this.progStyles[1];
         var prog2 = this.parse(prog2text).setRegistersIndex(1);
 
         var $this = this;
