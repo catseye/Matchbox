@@ -37,14 +37,14 @@ function launch(prefix, container, config) {
 
             var prog1Ctr = makeContainer();
             var run1Btn = yoob.makeButton(prog1Ctr, "Run", function() {
-                output.innerHTML =  matchbox.run(prog1ta.value);
+                output.innerHTML =  matchbox.runSingleProgram(prog1ta.value);
             });
             yoob.makeLineBreak(prog1Ctr);
             var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 20);
 
             var prog2Ctr = makeContainer();
             var run2Btn = yoob.makeButton(prog2Ctr, "Run", function() {
-                output.innerHTML =  matchbox.run(prog2ta.value);
+                output.innerHTML =  matchbox.runSingleProgram(prog2ta.value);
             });
             yoob.makeLineBreak(prog2Ctr);
             var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 20);
@@ -52,12 +52,18 @@ function launch(prefix, container, config) {
             var resultCtr = makeContainer();
             var findRacesBtn = yoob.makeButton(
                 resultCtr, "Find Race Conditions", function() {
-                matchbox.findRaceConditions(
-                    prog1ta.value, prog2ta.value, function(html) {
-                        output.innerHTML = html;
-                    }
-                );
-            });
+                    matchbox.findRaceConditions(
+                        prog1ta.value, prog2ta.value, function(html) {
+                            output.innerHTML = html;
+                        }
+                    );
+                }
+            );
+            var stopBtn = yoob.makeButton(
+                resultCtr, "Stop", function() {
+                    matchbox.stop();
+                }
+            );
             output = yoob.makeDiv(resultCtr);
 
             var sourceRoot = config.sourceRoot || '../eg/';

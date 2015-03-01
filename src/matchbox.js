@@ -329,7 +329,7 @@ var Matchbox = function() {
         http.send(null);
     };
 
-    this.run = function(progText) {
+    this.runSingleProgram = function(progText) {
         var regs = [(new yoob.Tape()).init({ default: 0 })];
         regs[0].style = this.progStyles[0];
         var prog = this.parse(progText).setRegistersIndex(0);
@@ -379,13 +379,19 @@ var Matchbox = function() {
         var $this = this;
         this.intervalId = setInterval(function() {
             if (i >= interleavings.length) {
-                clearInterval($this.intervalId);
-                $this.intervalId = undefined;
+                $this.stop();
                 return;
             }
             $this.runInterleavedProgram(interleavings[i], regs, callback);
             i += 1;
         }, 1000/60);
+    };
+
+    this.stop = function() {
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = undefined;
+        }
     };
 
     this.runInterleavedProgram = function(prog, regs, callback) {
