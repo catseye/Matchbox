@@ -242,6 +242,14 @@ var Program = function() {
 };
 
 var Matchbox = function() {
+    /*
+     * `workerURL` should be the URL for `matchbox-worker.js`.
+     * `progStyles` should be an array of CSS styles, one for each program.
+     * `displayInterleaving` should be a function which takes a string
+     *                       containing HTML, and (presumably) displays it
+     * `updateStatus` should be a function which takes a string
+     *                containing HTML, and (presumably) displays it
+     */
     this.init = function(cfg) {
         cfg = cfg || {};
         this.workerURL = cfg.workerURL;
@@ -249,6 +257,8 @@ var Matchbox = function() {
             'color: black; background: white;',
             'padding-left: 2em; color: black; background: white;',
         ];
+        this.displayInterleaving = cfg.displayInterleaving;
+        this.updateStatus = cfg.updateStatus;
         initScanner();
         return this;
     };
@@ -342,7 +352,7 @@ var Matchbox = function() {
         }
     };
 
-    this.reportResults = function(callback) {
+    this.reportResults = function() {
         var html = '';
         if (this.resultCount === 1) {
             html += '<span style="color: white; background: green;">PASS</span>';
@@ -351,7 +361,7 @@ var Matchbox = function() {
             html += '<span style="color: white; background: red;">FAIL</span>';
         }
 
-        callback(html);
+        this.updateStatus(html);
     };
 
     /* -------------- running and race-condition finding -------------- */
@@ -372,10 +382,10 @@ var Matchbox = function() {
         }
         html += 'R:' + this.tapeToString(regs[0]) + ", M:" + this.tapeToString(mem);
 
-        return html;
+        this.updateStatus(html);
     };
 
-    this.findRaceConditions = function(prog1text, prog2text, callback) {
+    this.findRaceConditions = function(prog1text, prog2text) {
         var regs = [
             (new yoob.Tape()).init({ default: 0 }),
             (new yoob.Tape()).init({ default: 0 })
@@ -394,12 +404,13 @@ var Matchbox = function() {
             for (var i = 0; i < interleavings.length; i++) {
                 interleavings[i] = (new Program()).reconstitute(interleavings[i]);
             }
-            $this.startRunningInterleavedPrograms(interleavings, regs, callback);
+            $this.startRunningInterleavedPrograms(interleavings, regs);
         });
+        this.updateStatus("Computing all interleavings...");
         worker.postMessage(["interleave", prog1.serialize(), prog2.serialize()]);
     };
 
-    this.startRunningInterleavedPrograms = function(interleavings, regs, callback) {
+    this.startRunningInterleavedPrograms = function(interleavings, regs) {
         if (this.intervalId !== undefined)
             return;
         this.clearResults();
@@ -407,11 +418,11 @@ var Matchbox = function() {
         var $this = this;
         this.intervalId = setInterval(function() {
             if (i >= interleavings.length) {
-                $this.reportResults(callback);
+                $this.reportResults();
                 $this.stop();
                 return;
             }
-            $this.runInterleavedProgram(interleavings[i], regs, callback);
+            $this.runInterleavedProgram(interleavings[i], regs);
             i += 1;
         }, 1000/60);
     };
@@ -423,7 +434,7 @@ var Matchbox = function() {
         }
     };
 
-    this.runInterleavedProgram = function(prog, regs, callback) {
+    this.runInterleavedProgram = function(prog, regs) {
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = '';
@@ -442,7 +453,7 @@ var Matchbox = function() {
         }
         html += '<br/>';
 
-        callback(html);
+        this.displayInterleaving(html);
     };
 
     /* ------------------- utility methods ------------------- */

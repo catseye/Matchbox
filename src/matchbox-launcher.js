@@ -19,11 +19,18 @@ function launch(prefix, container, config) {
         elem.onload = function() {
             if (++loaded < deps.length) return;
 
-            var matchbox = (new Matchbox()).init({
-                'workerURL': config.workerURL || "../src/matchbox-worker.js"
-            });
-
             var output;
+            var status;
+
+            var matchbox = (new Matchbox()).init({
+                'workerURL': config.workerURL || "../src/matchbox-worker.js",
+                'displayInterleaving': function(html) {
+                    output.innerHTML = html;
+                },
+                'updateStatus': function(html) {
+                    status.innerHTML += html + '<br/>';
+                }
+            });
 
             var controlPanel = yoob.makeDiv(container);
             var presetSelect = yoob.makeSelect(controlPanel, "Preset:", []);
@@ -37,14 +44,14 @@ function launch(prefix, container, config) {
 
             var prog1Ctr = makeContainer();
             var run1Btn = yoob.makeButton(prog1Ctr, "Run", function() {
-                output.innerHTML =  matchbox.runSingleProgram(prog1ta.value);
+                matchbox.runSingleProgram(prog1ta.value);
             });
             yoob.makeLineBreak(prog1Ctr);
             var prog1ta = yoob.makeTextArea(prog1Ctr, 20, 20);
 
             var prog2Ctr = makeContainer();
             var run2Btn = yoob.makeButton(prog2Ctr, "Run", function() {
-                output.innerHTML =  matchbox.runSingleProgram(prog2ta.value);
+                matchbox.runSingleProgram(prog2ta.value);
             });
             yoob.makeLineBreak(prog2Ctr);
             var prog2ta = yoob.makeTextArea(prog2Ctr, 20, 20);
@@ -52,11 +59,7 @@ function launch(prefix, container, config) {
             var resultCtr = makeContainer();
             var findRacesBtn = yoob.makeButton(
                 resultCtr, "Find Race Conditions", function() {
-                    matchbox.findRaceConditions(
-                        prog1ta.value, prog2ta.value, function(html) {
-                            output.innerHTML = html;
-                        }
-                    );
+                    matchbox.findRaceConditions(prog1ta.value, prog2ta.value); 
                 }
             );
             var stopBtn = yoob.makeButton(
@@ -65,6 +68,10 @@ function launch(prefix, container, config) {
                 }
             );
             output = yoob.makeDiv(resultCtr);
+            status = makeContainer();
+            status.style.background = 'black';
+            status.style.color = 'white';
+            status.style.font = '12px monospace';
 
             var sourceRoot = config.sourceRoot || '../eg/';
             var p = new yoob.PresetManager();
