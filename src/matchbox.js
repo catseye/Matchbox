@@ -253,13 +253,7 @@ var Matchbox = function() {
         return this;
     };
 
-    this.tapeToString = function(tape) {
-        var s = '';
-        tape.foreach(function(pos, val) {
-            s += '(' + pos + "=" + val + ")";
-        });
-        return s;
-    };
+    /* ------------------- parsing and loading ------------------- */
 
     this.parse = function(str) {
         var prog = (new Program()).init();
@@ -329,6 +323,39 @@ var Matchbox = function() {
         http.send(null);
     };
 
+    /* -------------- recording results -------------- */
+
+    this.clearResults = function() {
+        this.canonicalResult = null;
+        this.results = {};
+        this.resultCount = 0;
+    };
+
+    this.registerResult = function(mem) {
+        var key = this.tapeToString(mem);
+        if (this.results[key] === undefined) {
+            this.results[key] = true;
+            this.resultCount++;
+        }
+        if (!this.canonicalResult) {
+            this.canonicalResult = key;
+        }
+    };
+
+    this.reportResults = function(callback) {
+        var html = '';
+        if (this.resultCount === 1) {
+            html += '<span style="color: white; background: green;">PASS</span>';
+            html += this.canonicalResult;
+        } else {
+            html += '<span style="color: white; background: red;">FAIL</span>';
+        }
+
+        callback(html);
+    };
+
+    /* -------------- running and race-condition finding -------------- */
+
     this.runSingleProgram = function(progText) {
         var regs = [(new yoob.Tape()).init({ default: 0 })];
         regs[0].style = this.progStyles[0];
@@ -375,10 +402,12 @@ var Matchbox = function() {
     this.startRunningInterleavedPrograms = function(interleavings, regs, callback) {
         if (this.intervalId !== undefined)
             return;
+        this.clearResults();
         var i = 0;
         var $this = this;
         this.intervalId = setInterval(function() {
             if (i >= interleavings.length) {
+                $this.reportResults(callback);
                 $this.stop();
                 return;
             }
@@ -406,62 +435,23 @@ var Matchbox = function() {
         var result = prog.run(mem, regs);
         if (typeof result === 'string') {
             html += "Error: " + result + "<br/>";
-            //break;
         } else if (result === null) {
             html += "(can't happen)";
         } else {
-            /*
-            var key = this.tapeToString(mem);
-            canonicalResultKey = canonicalResultKey || key;
-            if (results[key] === undefined) {
-                results[key] = true;
-                resultCount++;
-            }
-            */
+            this.registerResult(mem);
         }
         html += '<br/>';
 
         callback(html);
     };
 
-    this.runInterleavedPrograms = function(interleavings, regs, callback) {
-        var mem = (new yoob.Tape()).init({ default: 0 });
+    /* ------------------- utility methods ------------------- */
 
-        var html = '';
-        var results = {};
-        var resultCount = 0;
-        var canonicalResultKey;
-
-        for (var i = 0; i < interleavings.length; i++) {
-            var prog = interleavings[i];
-            html += prog.toHTML(regs);
-            regs[0].clear();
-            regs[1].clear();
-            mem.clear();
-            var result = prog.run(mem, regs);
-            if (typeof result === 'string') {
-                html += "Error: " + result + "<br/>";
-                break;
-            } else if (result === null) {
-                html += "(can't happen)";
-            } else {
-                var key = this.tapeToString(mem);
-                canonicalResultKey = canonicalResultKey || key;
-                if (results[key] === undefined) {
-                    results[key] = true;
-                    resultCount++;
-                }
-            }
-            html += '<br/>';
-        }
-
-        if (resultCount === 1) {
-            html += '<span style="color: white; background: green;">PASS</span>';
-            html += canonicalResultKey;
-        } else {
-            html += '<span style="color: white; background: red;">FAIL</span>';
-        }
-
-        callback(html);
+    this.tapeToString = function(tape) {
+        var s = '';
+        tape.foreach(function(pos, val) {
+            s += '(' + pos + "=" + val + ")";
+        });
+        return s;
     };
 };
