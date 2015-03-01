@@ -253,10 +253,7 @@ var Matchbox = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
         this.workerURL = cfg.workerURL;
-        this.progStyles = cfg.progStyles || [
-            'color: black; background: white;',
-            'padding-left: 2em; color: black; background: white;',
-        ];
+        this.progStyles = cfg.progStyles;
         this.displayInterleaving = cfg.displayInterleaving;
         this.updateStatus = cfg.updateStatus;
         initScanner();
@@ -314,7 +311,7 @@ var Matchbox = function() {
         var $this = this;
         if (!errorCallback) {
             errorCallback = function(http) {
-                $this.loadSource(
+                alert(
                     "Error: could not load " + url + ": " + http.statusText
                 );
             }
@@ -393,7 +390,7 @@ var Matchbox = function() {
         regs[0].style = this.progStyles[0];
         var prog1 = this.parse(prog1text).setRegistersIndex(0);
 
-        regs[0].style = this.progStyles[1];
+        regs[1].style = this.progStyles[1];
         var prog2 = this.parse(prog2text).setRegistersIndex(1);
 
         var $this = this;
@@ -404,6 +401,7 @@ var Matchbox = function() {
             for (var i = 0; i < interleavings.length; i++) {
                 interleavings[i] = (new Program()).reconstitute(interleavings[i]);
             }
+            $this.updateStatus("Running " + interleavings.length + " interleavings...");
             $this.startRunningInterleavedPrograms(interleavings, regs);
         });
         this.updateStatus("Computing all interleavings...");

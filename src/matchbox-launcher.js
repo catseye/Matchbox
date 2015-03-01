@@ -29,7 +29,12 @@ function launch(prefix, container, config) {
                 },
                 'updateStatus': function(html) {
                     status.innerHTML += html + '<br/>';
-                }
+                    status.scrollTop = Math.max(status.scrollHeight - status.clientHeight, 0);
+                },
+                'progStyles': [
+                    '',
+                    'padding-left: 3em;'
+                ]
             });
 
             var controlPanel = yoob.makeDiv(container);
@@ -39,6 +44,8 @@ function launch(prefix, container, config) {
                 var c = yoob.makeDiv(container);
                 c.style.display = 'inline-block';
                 c.style.verticalAlign = 'top';
+                c.style.textAlign = 'left';
+                c.style.paddingRight = '3px';
                 return c;
             };
 
@@ -67,11 +74,25 @@ function launch(prefix, container, config) {
                     matchbox.stop();
                 }
             );
+
+            // larger than it actually is, for some reason
+            var height = prog2Ctr.getBoundingClientRect().height * 0.90;
+
             output = yoob.makeDiv(resultCtr);
-            status = makeContainer();
+            output.style.background = '#ffffc0';
+            output.style.color = 'black';
+            output.style.font = '12px monospace';
+            output.style.minWidth = '20em';
+            output.style.height = Math.trunc(height * 0.75) + 'px';
+            output.style.overflow = 'auto';
+
+            status = yoob.makeDiv(resultCtr);
             status.style.background = 'black';
             status.style.color = 'white';
             status.style.font = '12px monospace';
+            status.style.minWidth = '20em';
+            status.style.height = Math.trunc(height * 0.25) + 'px';
+            status.style.overflow = 'auto';
 
             var sourceRoot = config.sourceRoot || '../eg/';
             var p = new yoob.PresetManager();
@@ -89,6 +110,7 @@ function launch(prefix, container, config) {
             p.add('petersons-no-race.mbox');
             p.select('basic-race.mbox');
 
+            status.innerHTML = 'Ready.<br/>';
         };
         document.body.appendChild(elem);
     }
