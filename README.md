@@ -161,7 +161,20 @@ with direct simulation like we're doing here.
 TODO
 ----
 
-*   animate and basically display it all more nicely
+*   animation style selector
+*   four columns
+*   comments in examples
+*   better output on "Run"
+*   program errors in output
+*   don't run interleavings if error in either
+*   stop should reset interleaving counter
+*   changing preset should stop and reset all
+*   better "(can't happen)"
+*   trim can't happen sequels
+*   peterson's as default
+*   better output on "Find RCs" -- explain why it failed
+*   display tape better
+*   "Run" should display single program in "interleavings" window
 *   ability to break on first inconsistent result (for long programs)
 *   add sufficient instructions to implement [Szymanski's algorithm][]?
 

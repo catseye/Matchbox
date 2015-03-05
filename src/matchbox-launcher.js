@@ -75,23 +75,20 @@ function launch(prefix, container, config) {
                 }
             );
 
-            // larger than it actually is, for some reason
-            var height = prog2Ctr.getBoundingClientRect().height * 0.90;
-
-            output = yoob.makeDiv(resultCtr);
+            var outputCtr = makeContainer();
+            output = yoob.makeDiv(outputCtr);
             output.style.background = '#ffffc0';
             output.style.color = 'black';
             output.style.font = '12px monospace';
             output.style.minWidth = '20em';
-            output.style.height = Math.trunc(height * 0.75) + 'px';
             output.style.overflow = 'auto';
 
-            status = yoob.makeDiv(resultCtr);
+            var statusCtr = makeContainer();
+            status = yoob.makeDiv(statusCtr);
             status.style.background = 'black';
             status.style.color = 'white';
             status.style.font = '12px monospace';
             status.style.minWidth = '20em';
-            status.style.height = Math.trunc(height * 0.25) + 'px';
             status.style.overflow = 'auto';
 
             var sourceRoot = config.sourceRoot || '../eg/';
