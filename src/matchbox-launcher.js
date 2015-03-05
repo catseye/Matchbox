@@ -84,6 +84,11 @@ function launch(prefix, container, config) {
             output.style.overflow = 'auto';
 
             var statusCtr = makeContainer();
+            var clearBtn = yoob.makeButton(
+                statusCtr, "Clear", function() {
+                    status.innerHTML = "Ready.<br/>";
+                }
+            );
             status = yoob.makeDiv(statusCtr);
             status.style.background = 'black';
             status.style.color = 'white';
@@ -96,7 +101,7 @@ function launch(prefix, container, config) {
             p.init({
                 'selectElem': presetSelect,
                 'setPreset': function(n) {
-                    matchbox.stop();
+                    matchbox.reset();
                     matchbox.loadSourceFromURL(sourceRoot + n, function(texts) {
                         description.innerHTML = texts[0];
                         prog1ta.value = texts[1];

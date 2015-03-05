@@ -382,13 +382,17 @@ var Matchbox = function() {
         var html = ''
         var result = prog.run(mem, regs);
         if (typeof result === 'string') {
-            html += "Error: " + result + "<br/>";
+            this.updateStatus('<span style="color: yellow; background: red;">ERROR</span> ' + result);
         } else if (result === null) {
-            html += "Program stopped on WAIT<br/>";
+            this.updateStatus('<span style="color: black; background: yellow;">WAIT</span> Program hung on WAIT');
+        } else {
+            this.updateStatus('Finished.');
         }
-        html += 'R:' + this.tapeToString(regs[0]) + ", M:" + this.tapeToString(mem);
 
-        this.updateStatus(html);
+        if (typeof result !== 'string') {
+            this.updateStatus('<span style="color: black; background: blue;">REG</span> ' + this.tapeToString(regs[0]));
+            this.updateStatus('<span style="color: black; background: blue;">MEM</span> ' + this.tapeToString(mem));
+        }
     };
 
     this.findRaceConditions = function(prog1text, prog2text) {
@@ -404,8 +408,8 @@ var Matchbox = function() {
         var prog2 = this.parse(prog2text).setRegistersIndex(1);
 
         var $this = this;
-        var worker = new Worker(this.workerURL);
-        worker.addEventListener('message', function(e) {
+        this.worker = new Worker(this.workerURL);
+        this.worker.addEventListener('message', function(e) {
             var interleavings = e.data;
             /* reconstitute Programs from interleavings */
             for (var i = 0; i < interleavings.length; i++) {
@@ -415,7 +419,7 @@ var Matchbox = function() {
             $this.startRunningInterleavedPrograms(interleavings, regs);
         });
         this.updateStatus("Computing all interleavings...");
-        worker.postMessage(["interleave", prog1.serialize(), prog2.serialize()]);
+        this.worker.postMessage(["interleave", prog1.serialize(), prog2.serialize()]);
     };
 
     this.startRunningInterleavedPrograms = function(interleavings, regs) {
@@ -436,11 +440,23 @@ var Matchbox = function() {
     };
 
     this.stop = function() {
+        if (this.worker) {
+            this.worker.terminate();
+            this.worker = undefined;
+            this.updateStatus("Stopped web worker.");
+        }
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = undefined;
+            this.updateStatus("Stopped.");
         }
         this.interleavingCounter = 0;
+    };
+
+    this.reset = function() {
+        this.stop();
+        this.displayInterleaving("");
+        this.updateStatus("Reset.");
     };
 
     this.runInterleavedProgram = function(prog, regs) {

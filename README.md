@@ -171,19 +171,14 @@ with direct simulation like we're doing here.
 TODO
 ----
 
-*   animation style selector
-*   better output on "Run"
-*   program errors in output
 *   don't run interleavings if error in either
-*   implement reset()
-*   log stop and reset
-*   changing preset should reset()
 *   better "(can't happen)"
 *   better output on "Find RCs" -- explain why it failed
 *   display tape better
 
 Slightly more advanced TODO items (might not happen before release):
 
+*   animation style selector: staggered, black + white, no animation
 *   when finding a "(can't happen)", strip all further interleavings which
     have the same prefix
 *   ability to break on first inconsistent result (for long programs)
