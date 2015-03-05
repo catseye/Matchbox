@@ -172,18 +172,20 @@ TODO
 ----
 
 *   animation style selector
-*   four columns
 *   better output on "Run"
 *   program errors in output
 *   don't run interleavings if error in either
-*   stop should reset interleaving counter
-*   changing preset should stop and reset all
+*   implement reset()
+*   log stop and reset
+*   changing preset should reset()
 *   better "(can't happen)"
-*   trim can't happen sequels
-*   peterson's as default
 *   better output on "Find RCs" -- explain why it failed
 *   display tape better
-*   "Run" should display single program in "interleavings" window
+
+Slightly more advanced TODO items (might not happen before release):
+
+*   when finding a "(can't happen)", strip all further interleavings which
+    have the same prefix
 *   ability to break on first inconsistent result (for long programs)
 *   add sufficient instructions to implement [Szymanski's algorithm][]?
 

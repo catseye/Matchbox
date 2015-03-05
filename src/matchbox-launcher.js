@@ -21,7 +21,6 @@ function launch(prefix, container, config) {
 
             var output;
             var status;
-            var description = yoob.makePre(container);
 
             var matchbox = (new Matchbox()).init({
                 'workerURL': config.workerURL || "../src/matchbox-worker.js",
@@ -40,6 +39,7 @@ function launch(prefix, container, config) {
 
             var controlPanel = yoob.makeDiv(container);
             var presetSelect = yoob.makeSelect(controlPanel, "Preset:", []);
+            var description = yoob.makePre(controlPanel);
 
             var makeContainer = function() {
                 var c = yoob.makeDiv(container);
@@ -76,8 +76,7 @@ function launch(prefix, container, config) {
                 }
             );
 
-            var outputCtr = makeContainer();
-            output = yoob.makeDiv(outputCtr);
+            output = yoob.makeDiv(resultCtr);
             output.style.background = '#ffffc0';
             output.style.color = 'black';
             output.style.font = '12px monospace';
@@ -97,6 +96,7 @@ function launch(prefix, container, config) {
             p.init({
                 'selectElem': presetSelect,
                 'setPreset': function(n) {
+                    matchbox.stop();
                     matchbox.loadSourceFromURL(sourceRoot + n, function(texts) {
                         description.innerHTML = texts[0];
                         prog1ta.value = texts[1];
@@ -107,7 +107,7 @@ function launch(prefix, container, config) {
             p.add('basic-race.mbox');
             p.add('basic-no-race.mbox');
             p.add('petersons-no-race.mbox');
-            p.select('basic-race.mbox');
+            p.select('petersons-no-race.mbox');
 
             status.innerHTML = 'Ready.<br/>';
         };

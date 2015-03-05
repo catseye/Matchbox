@@ -287,7 +287,7 @@ var Matchbox = function() {
      */
     this.splitIntoProgramTexts = function(str) {
         var s = matchboxScanner;
-        var texts = [[], []];
+        var texts = [[], [], []];
         var progNum = 0;
         var lines = str.split("\n");
         this.code = [];
@@ -375,6 +375,8 @@ var Matchbox = function() {
         regs[0].style = this.progStyles[0];
         var prog = this.parse(progText).setRegistersIndex(0);
 
+        this.displayInterleaving(prog.toHTML(regs));
+
         var mem = (new yoob.Tape()).init({ default: 0 });
 
         var html = ''
@@ -390,6 +392,7 @@ var Matchbox = function() {
     };
 
     this.findRaceConditions = function(prog1text, prog2text) {
+        this.stop();
         var regs = [
             (new yoob.Tape()).init({ default: 0 }),
             (new yoob.Tape()).init({ default: 0 })
@@ -419,16 +422,16 @@ var Matchbox = function() {
         if (this.intervalId !== undefined)
             return;
         this.clearResults();
-        var i = 0;
+        this.interleavingCounter = 0;
         var $this = this;
         this.intervalId = setInterval(function() {
-            if (i >= interleavings.length) {
+            if ($this.interleavingCounter >= interleavings.length) {
                 $this.reportResults();
                 $this.stop();
                 return;
             }
-            $this.runInterleavedProgram(interleavings[i], regs);
-            i += 1;
+            $this.runInterleavedProgram(interleavings[$this.interleavingCounter], regs);
+            $this.interleavingCounter += 1;
         }, 1000/60);
     };
 
@@ -437,6 +440,7 @@ var Matchbox = function() {
             clearInterval(this.intervalId);
             this.intervalId = undefined;
         }
+        this.interleavingCounter = 0;
     };
 
     this.runInterleavedProgram = function(prog, regs) {
