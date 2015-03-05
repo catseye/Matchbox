@@ -280,7 +280,10 @@ var Matchbox = function() {
 
     /*
      * Given a full Matchbox source (containing multiple programs,)
-     * split into individual program texts, retaining comments and such.
+     * split into a three-elementary array which contains
+     * - descriptive text
+     * - text of program 0
+     * - text of program 1
      */
     this.splitIntoProgramTexts = function(str) {
         var s = matchboxScanner;
@@ -294,13 +297,17 @@ var Matchbox = function() {
             if (s.onType('opcode') && s.token === 'PROG') {
                 s.scan();
                 if (s.onType('immediate')) {
-                    progNum = parseInt(s.token, 10);
+                    progNum = parseInt(s.token, 10) + 1;
                     continue;
                 }
+            } else if (s.onType('opcode') && s.token === 'DESC') {
+                s.scan();
+                progNum = 0;
+                continue;
             }
             texts[progNum].push(str);
         }
-        return [texts[0].join("\n"), texts[1].join("\n")];
+        return [texts[0].join("\n"), texts[1].join("\n"), texts[2].join("\n")];
     };
 
     /*
@@ -320,8 +327,8 @@ var Matchbox = function() {
         http.onload = function(e) {
             if (http.readyState === 4 && http.responseText) {
                 if (http.status === 200) {
-                    var progs = $this.splitIntoProgramTexts(http.responseText);
-                    successCallback(progs[0], progs[1]);
+                    var texts = $this.splitIntoProgramTexts(http.responseText);
+                    successCallback(texts);
                 } else {
                     errorCallback(http);
                 }

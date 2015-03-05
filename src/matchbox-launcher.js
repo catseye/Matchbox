@@ -21,6 +21,7 @@ function launch(prefix, container, config) {
 
             var output;
             var status;
+            var description = yoob.makePre(container);
 
             var matchbox = (new Matchbox()).init({
                 'workerURL': config.workerURL || "../src/matchbox-worker.js",
@@ -96,9 +97,10 @@ function launch(prefix, container, config) {
             p.init({
                 'selectElem': presetSelect,
                 'setPreset': function(n) {
-                    matchbox.loadSourceFromURL(sourceRoot + n, function(p1, p2) {
-                        prog1ta.value = p1;
-                        prog2ta.value = p2;
+                    matchbox.loadSourceFromURL(sourceRoot + n, function(texts) {
+                        description.innerHTML = texts[0];
+                        prog1ta.value = texts[1];
+                        prog2ta.value = texts[2];
                     });
                 }
             });

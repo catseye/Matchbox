@@ -1,3 +1,9 @@
+DESC
+
+; Basic example of a pair of programs which have a
+; race condition, because their use of shared memory
+; is not atomic.
+
 PROG 0
 MOV M0, R0
 INC R0

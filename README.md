@@ -58,10 +58,15 @@ Each line may contain a pragma, an instruction, a comment, or be blank.
 Comments and blank lines are ignored.  Comments begin with a `;` in the
 first column.
 
-There is one pragma, `PROG`.  It is only used when the source is a single
-text file; it specifies which program is being given next in the file.
-If the two programs are being given separately, for example in individual
-textboxes in a GUI, it is not used.
+There are two pragmas.  The first, `DESC`, indicates a section of the
+program which contains a human-readable (and computer-ignored) description
+of the program.  The other, `PROG`, specifies which program is being given
+next in the file.
+
+These pragmas are only used when the source is a single text file;
+if the two programs are being given separately, for example in individual
+textboxes in a GUI, they are not used (and in fact their presence is an
+error.)
 
 Instructions consist of an opcode which is followed by zero, one, or
 two data references.
@@ -115,12 +120,17 @@ race condition.
 [Dekker's algorithm][] will not be possible to implement in Matchbox,
 because it contains a nested `while` loop (see "Limitations", below.)
 
+Note that these algorithms are generally not needed on modern computer
+architectures which provide operations like atomic test-and-set.  They
+are demonstrated here for their beauty as algorithms and their historical
+importance only.
+
 Discussion
 ----------
 
-### Why should I care?  I don't program in assembler! ###
+### Why should I care?  I don't program in assembly language! ###
 
-Doesn't matter; you still have race conditions.  Race conditions are
+Doesn't matter; you still face race conditions.  Race conditions are
 _everywhere_, and every software developer should be familiar with them
 (I like to use the questions "Can you tell me what a race condition is?
 Can you give me an example?  Can you tell me about one you had to find
@@ -163,7 +173,6 @@ TODO
 
 *   animation style selector
 *   four columns
-*   comments in examples
 *   better output on "Run"
 *   program errors in output
 *   don't run interleavings if error in either
