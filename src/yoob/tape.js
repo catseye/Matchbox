@@ -16,6 +16,14 @@ yoob.Tape = function() {
         return this;
     };
 
+    this.clone = function() {
+        var t = (new yoob.Tape()).init({ 'default': this.default });
+        this.foreach(function(pos, val) {
+            t.put(pos, val);
+        });
+        return t;
+    };
+
     /*
      * Removes all values that have been written to the tape.
      */

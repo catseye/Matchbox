@@ -171,10 +171,11 @@ with direct simulation like we're doing here.
 TODO
 ----
 
+*   strip blank lines and beginning and end of DESC
 *   don't run interleavings if error in either
 *   better "(can't happen)"
-*   better output on "Find RCs" -- explain why it failed
-*   display tape better
+*   better output on "Find RCs" -- explain why it failed -- record each
+    failure in object, iterate over all keys in object
 
 Slightly more advanced TODO items (might not happen before release):
 

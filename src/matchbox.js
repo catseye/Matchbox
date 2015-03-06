@@ -340,7 +340,7 @@ var Matchbox = function() {
     /* -------------- recording results -------------- */
 
     this.clearResults = function() {
-        this.canonicalResult = null;
+        this.canonicalResultKey = null;
         this.results = {};
         this.resultCount = 0;
     };
@@ -348,24 +348,28 @@ var Matchbox = function() {
     this.registerResult = function(mem) {
         var key = this.tapeToString(mem);
         if (this.results[key] === undefined) {
-            this.results[key] = true;
+            this.results[key] = mem.clone();
             this.resultCount++;
         }
-        if (!this.canonicalResult) {
-            this.canonicalResult = key;
+        if (!this.canonicalResultKey) {
+            this.canonicalResultKey = key;
         }
     };
 
     this.reportResults = function() {
-        var html = '';
         if (this.resultCount === 1) {
-            html += '<span style="color: white; background: green;">PASS</span>';
-            html += this.canonicalResult;
+            this.updateStatus('<span style="color: white; background: green;">PASS</span>');
+            this.reportState(this.results[this.canonicalResultKey], []);
         } else {
-            html += '<span style="color: white; background: red;">FAIL</span>';
+            this.updateStatus('<span style="color: white; background: red;">FAIL</span>');
         }
+    };
 
-        this.updateStatus(html);
+    this.reportState = function(mem, regs) {
+        this.updateStatus('<span style="color: black; background: blue;">MEM</span> ' + this.tapeToString(mem, 'M'));
+        for (var i = 0; i < regs.length; i++) {
+            this.updateStatus('<span style="color: black; background: blue;">REGS ' + i + '</span> ' + this.tapeToString(regs[i], 'R'));
+        }
     };
 
     /* -------------- running and race-condition finding -------------- */
@@ -374,6 +378,8 @@ var Matchbox = function() {
         var regs = [(new yoob.Tape()).init({ default: 0 })];
         regs[0].style = this.progStyles[0];
         var prog = this.parse(progText).setRegistersIndex(0);
+
+        this.updateStatus("Running...");
 
         this.displayInterleaving(prog.toHTML(regs));
 
@@ -385,13 +391,10 @@ var Matchbox = function() {
             this.updateStatus('<span style="color: yellow; background: red;">ERROR</span> ' + result);
         } else if (result === null) {
             this.updateStatus('<span style="color: black; background: yellow;">WAIT</span> Program hung on WAIT');
+            this.reportState(mem, regs);
         } else {
             this.updateStatus('Finished.');
-        }
-
-        if (typeof result !== 'string') {
-            this.updateStatus('<span style="color: black; background: blue;">REG</span> ' + this.tapeToString(regs[0]));
-            this.updateStatus('<span style="color: black; background: blue;">MEM</span> ' + this.tapeToString(mem));
+            this.reportState(mem, regs);
         }
     };
 
@@ -483,11 +486,12 @@ var Matchbox = function() {
 
     /* ------------------- utility methods ------------------- */
 
-    this.tapeToString = function(tape) {
+    this.tapeToString = function(tape, prefix) {
         var s = '';
+        var v = [];
         tape.foreach(function(pos, val) {
-            s += '(' + pos + "=" + val + ")";
+            v.push(prefix + pos + "=" + val);
         });
-        return s;
+        return v.join(", ");
     };
 };

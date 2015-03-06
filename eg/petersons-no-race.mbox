@@ -1,16 +1,9 @@
 DESC
 
 ; This is a demonstration of Peterson's algorithm for mutual exclusion,
-; which can be used to prevent race conditions.  The parts of the code
-; marked "c.s." below are the critical sections.
-
-; See http://en.wikipedia.org/wiki/Peterson%27s_algorithm for more.
-
-; Legend for translating memory locations to vars in Wikipedia's pseudocode:
-; M0 is flag[0]
-; M1 is flag[1]
-; M2 is turn
-; M3 is the target
+; which can be used to prevent race conditions.
+; See http://en.wikipedia.org/wiki/Peterson%27s_algorithm for details.
+; M0 is "flag[0]"; M1 is "flag[1]"; M2 is "turn"; M3 is the target location
 
 PROG 0
 MOV 1, M0
