@@ -90,6 +90,38 @@ var Instruction = function() {
     };
 
     /*
+     * Return an error message string if this Instruction is not well-formed.
+     */
+    this.check = function() {
+        var srcType = this.srcType;
+        var destType = this.destType;
+        if (this.opcode === 'MOV') {
+            if (srcType !== 'I' && srcType !== 'R' && srcType !== 'M') {
+                return "Illegal source reference";
+            }
+            if (destType !== 'R' && destType !== 'M') {
+                return "Illegal destination reference";
+            }
+            return true;
+        } else if (this.opcode === 'INC') {
+            if (srcType !== 'R' && srcType !== 'M') {
+                return "Illegal source reference";
+            }
+            return true;
+        } else if (this.opcode === 'WAIT') {
+            if (srcType !== 'M') {
+                return "Illegal source reference";
+            }
+            if (destType !== 'I') {
+                return "Illegal destination reference";
+            }
+            return true;
+        } else {
+            return "Illegal opcode";
+        }
+    };
+
+    /*
      * Given a yoob.Tape that represents shared memory, and an array of
      * yoob.Tapes that represent private register contexts, execute this
      * Instruction.  May return:
@@ -158,6 +190,10 @@ var Instruction = function() {
     };
 };
 
+/*
+ * Objects of this class can actually represent 2 interleaved programs,
+ * as well as a single program.
+ */
 var Program = function() {
     this.init = function(cfg) {
         cfg = cfg || {};
@@ -207,6 +243,25 @@ var Program = function() {
         }
 
         return this;
+    };
+
+    /*
+     * May return:
+     *
+     * true, to indicate that the program checked successfully; or
+     * an error string, to indicate that an instruction was malformed.
+     */
+    this.check = function() {
+        var code = this.code;
+
+        for (var i = 0; i < code.length; i++) {
+            var result = code[i].check();
+            if (typeof result === "string") {
+                return result;
+            }
+        }
+
+        return true;
     };
 
     /*
@@ -293,6 +348,9 @@ var Matchbox = function() {
         this.code = [];
         for (var i = 0; i < lines.length; i++) {
             var str = lines[i];
+            if (progNum === 0 && str.trim().length === 0) {
+                continue;
+            }
             s.reset(str);
             if (s.onType('opcode') && s.token === 'PROG') {
                 s.scan();
@@ -406,9 +464,19 @@ var Matchbox = function() {
         ];
         regs[0].style = this.progStyles[0];
         var prog1 = this.parse(prog1text).setRegistersIndex(0);
+        var result = prog1.check();
+        if (typeof result === 'string') {
+            this.updateStatus('<span style="color: yellow; background: red;">ERROR</span> ' + result);
+            return;
+        }
 
         regs[1].style = this.progStyles[1];
         var prog2 = this.parse(prog2text).setRegistersIndex(1);
+        var result = prog2.check();
+        if (typeof result === 'string') {
+            this.updateStatus('<span style="color: yellow; background: red;">ERROR</span> ' + result);
+            return;
+        }
 
         var $this = this;
         this.worker = new Worker(this.workerURL);

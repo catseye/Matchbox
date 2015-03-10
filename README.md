@@ -137,8 +137,9 @@ Can you give me an example?  Can you tell me about one you had to find
 and fix?" during phone screens.)
 
 A huge example that is relevant to virtually every programmer is the
-filesystem.  It's a big, shared, mutable store.  Some operations, like
-rename, are often guaranteed to be atomic.  But most of them aren't.
+filesystem.  It's a big, shared, mutable store.  There are often some
+operations, like renaming a file, that are guaranteed to be atomic; but
+most filesystem operations do not have this guarantee.
 
 ### Limitations ###
 
@@ -171,14 +172,13 @@ with direct simulation like we're doing here.
 TODO
 ----
 
-*   strip blank lines and beginning and end of DESC
-*   don't run interleavings if error in either
 *   better "(can't happen)"
 *   better output on "Find RCs" -- explain why it failed -- record each
     failure in object, iterate over all keys in object
 
 Slightly more advanced TODO items (might not happen before release):
 
+*   improve error-checking subsystem to report the program and line number
 *   animation style selector: staggered, black + white, no animation
 *   when finding a "(can't happen)", strip all further interleavings which
     have the same prefix
