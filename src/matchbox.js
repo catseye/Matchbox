@@ -398,28 +398,35 @@ var Matchbox = function() {
     /* -------------- recording results -------------- */
 
     this.clearResults = function() {
-        this.canonicalResultKey = null;
         this.results = {};
-        this.resultCount = 0;
     };
 
     this.registerResult = function(mem) {
         var key = this.tapeToString(mem);
         if (this.results[key] === undefined) {
             this.results[key] = mem.clone();
-            this.resultCount++;
-        }
-        if (!this.canonicalResultKey) {
-            this.canonicalResultKey = key;
         }
     };
 
     this.reportResults = function() {
-        if (this.resultCount === 1) {
+        var resultCount = 0;
+
+        for (var key in this.results) {
+            if (this.results.hasOwnProperty(key)) {
+                resultCount += 1;
+            }
+        }
+
+        if (resultCount === 1) {
             this.updateStatus('<span style="color: white; background: green;">PASS</span>');
-            this.reportState(this.results[this.canonicalResultKey], []);
         } else {
             this.updateStatus('<span style="color: white; background: red;">FAIL</span>');
+        }
+
+        for (var key in this.results) {
+            if (this.results.hasOwnProperty(key)) {
+                this.reportState(this.results[key], []);
+            }
         }
     };
 
