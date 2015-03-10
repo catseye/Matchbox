@@ -173,12 +173,11 @@ TODO
 ----
 
 *   better "(can't happen)"
-*   better output on "Find RCs" -- explain why it failed -- record each
-    failure in object, iterate over all keys in object
 
 Slightly more advanced TODO items (might not happen before release):
 
 *   improve error-checking subsystem to report the program and line number
+*   better output on "Find RCs" -- explain why it failed
 *   animation style selector: staggered, black + white, no animation
 *   when finding a "(can't happen)", strip all further interleavings which
     have the same prefix

@@ -109,10 +109,11 @@ function launch(prefix, container, config) {
                     });
                 }
             });
+            p.add('trivial-independent.mbox');
             p.add('basic-race.mbox');
             p.add('basic-no-race.mbox');
             p.add('petersons-no-race.mbox');
-            p.select('petersons-no-race.mbox');
+            p.select('basic-race.mbox');
 
             status.innerHTML = 'Ready.<br/>';
         };
