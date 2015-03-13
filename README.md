@@ -14,9 +14,9 @@ These two program each have their own set of registers, but the main memory
 which they write to and read from is shared between them.
 
 It then computes all possible interleavings of these two programs, and
-executes them all, each on a freshly-zeroed shared memory.  Unless _all_
-the interleavings leave the memory in exactly the same state after execution,
-the programs have a race condition.
+executes them all, each on freshly-zeroed registers and shared memory.  Unless
+_all_ the possible interleavings leave the memory in exactly the same state
+after execution, the programs have a race condition.
 
 Basic Examples
 --------------
@@ -31,7 +31,7 @@ run at the same time.
 
     PROG 1
     
-    INC M1
+    INC M0
 
 But the following two programs _do_ have a race condition:
 
@@ -60,8 +60,11 @@ first column.
 
 There are two pragmas.  The first, `DESC`, indicates a section of the
 program which contains a human-readable (and computer-ignored) description
-of the program.  The other, `PROG`, specifies which program is being given
-next in the file.
+of the following program(s).  This description is not free-form; it should be
+given in terms of comments.
+
+The other pragma, `PROG`, is followed by an integer which specifies which
+program is being given next in the file.
 
 These pragmas are only used when the source is a single text file;
 if the two programs are being given separately, for example in individual
@@ -136,7 +139,7 @@ _everywhere_, and every software developer should be familiar with them
 Can you give me an example?  Can you tell me about one you had to find
 and fix?" during phone screens.)
 
-A huge example that is relevant to virtually every programmer is the
+A glaring example that is relevant to virtually every programmer is the
 filesystem.  It's a big, shared, mutable store.  There are often some
 operations, like renaming a file, that are guaranteed to be atomic; but
 most filesystem operations do not have this guarantee.
@@ -171,10 +174,6 @@ with direct simulation like we're doing here.
 
 TODO
 ----
-
-*   better "(can't happen)"
-
-Slightly more advanced TODO items (might not happen before release):
 
 *   improve error-checking subsystem to report the program and line number
 *   better output on "Find RCs" -- explain why it failed

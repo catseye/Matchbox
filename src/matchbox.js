@@ -545,7 +545,7 @@ var Matchbox = function() {
         html += prog.toHTML(regs);
         regs[0].clear();
         regs[1].clear();
-        mem.clear();
+
         var result = prog.run(mem, regs);
         if (typeof result === 'string') {
             html += "Error: " + result + "<br/>";
