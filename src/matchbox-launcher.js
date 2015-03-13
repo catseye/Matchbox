@@ -38,8 +38,13 @@ function launch(prefix, container, config) {
             });
 
             var controlPanel = yoob.makeDiv(container);
-            var presetSelect = yoob.makeSelect(controlPanel, "Preset:", []);
+            //controlPanel.style.textAlign = 'left';
+            var presetSelect = yoob.makeSelect(controlPanel, "", []);
+            presetSelect.style.verticalAlign = 'top';
             var description = yoob.makePre(controlPanel);
+            description.style.textAlign = 'left';
+            description.style.display = 'inline-block';
+            description.style.minHeight = '5em';
 
             var makeContainer = function() {
                 var c = yoob.makeDiv(container);
