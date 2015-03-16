@@ -3,6 +3,7 @@ DESC
 ; Basic example of a pair of programs which do not
 ; have a race condition, because they use atomic
 ; operations on their shared memory.
+;
 
 PROG 0
 INC M0

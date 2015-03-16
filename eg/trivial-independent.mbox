@@ -2,6 +2,8 @@ DESC
 
 ; Example of a pair of programs which trivially do not
 ; have a race condition, because they do not share memory.
+;
+;
 
 PROG 0
 MOV M0, R0
