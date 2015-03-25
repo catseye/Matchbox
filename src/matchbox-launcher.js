@@ -1,5 +1,10 @@
 "use strict";
 
+/*
+ * The contents of this file are in the public domain.
+ * See the file UNLICENSE in the root directory for more information. 
+ */
+
 function launch(prefix, container, config) {
     if (typeof container === 'string') {
         container = document.getElementById(container);
