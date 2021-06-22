@@ -1,6 +1,11 @@
 Matchbox
 ========
 
+_Try it online_ [@ catseye.tc](https://catseye.tc/installation/Matchbox)
+| _See also:_ [Peterson's algorithm](https://en.wikipedia.org/wiki/Peterson%27s_algorithm)
+
+- - - -
+
 Matchbox is a tool which finds [race conditions][].
 It is currently a work in progress.
 
