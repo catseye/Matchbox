@@ -373,33 +373,6 @@ var Matchbox = function() {
         return [texts[0].join("\n"), texts[1].join("\n"), texts[2].join("\n")];
     };
 
-    /*
-     * Cribbed from yoob.SourceManager
-     */
-    this.loadSourceFromURL = function(url, successCallback, errorCallback) {
-        var http = new XMLHttpRequest();
-        var $this = this;
-        if (!errorCallback) {
-            errorCallback = function(http) {
-                alert(
-                    "Error: could not load " + url + ": " + http.statusText
-                );
-            }
-        }
-        http.open("get", url, true);
-        http.onload = function(e) {
-            if (http.readyState === 4 && http.responseText) {
-                if (http.status === 200) {
-                    var texts = $this.splitIntoProgramTexts(http.responseText);
-                    successCallback(texts);
-                } else {
-                    errorCallback(http);
-                }
-            }
-        };
-        http.send(null);
-    };
-
     /* -------------- recording results -------------- */
 
     this.clearResults = function() {

@@ -104,23 +104,29 @@ function launch(prefix, container, config) {
             status.style.minWidth = '20em';
             status.style.overflow = 'auto';
 
-            var sourceRoot = config.sourceRoot || '../eg/';
+            var getExampleProgram = function(n) {
+                for (var i = 0; i < examplePrograms.length; i++) {
+                    if (examplePrograms[i].filename === n) {
+                        return examplePrograms[i].contents;
+                    }
+                }
+                return "";
+            }
             var p = new yoob.PresetManager();
             p.init({
                 'selectElem': presetSelect,
                 'setPreset': function(n) {
                     matchbox.reset();
-                    matchbox.loadSourceFromURL(sourceRoot + n, function(texts) {
-                        description.innerHTML = texts[0];
-                        prog1ta.value = texts[1];
-                        prog2ta.value = texts[2];
-                    });
+                    var source = getExampleProgram(n);
+                    var texts = matchbox.splitIntoProgramTexts(source);
+                    description.innerHTML = texts[0];
+                    prog1ta.value = texts[1];
+                    prog2ta.value = texts[2];
                 }
             });
-            p.add('trivial-independent.mbox');
-            p.add('basic-race.mbox');
-            p.add('basic-no-race.mbox');
-            p.add('petersons-no-race.mbox');
+            for (var i = 0; i < examplePrograms.length; i++) {
+                p.add(examplePrograms[i].filename);
+            }
             p.select('basic-race.mbox');
 
             status.innerHTML = 'Ready.<br/>';
