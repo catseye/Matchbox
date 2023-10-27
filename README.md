@@ -2,8 +2,7 @@ Matchbox
 ========
 
 _Try it online_ [@ catseye.tc](https://catseye.tc/installation/Matchbox)
-| _See also:_ [Maxixe](https://github.com/catseye/Maxixe#readme)
-∘ [Peterson's algorithm (WP)](https://en.wikipedia.org/wiki/Peterson%27s_algorithm)
+| _See also:_ [Peterson's algorithm (WP)](https://en.wikipedia.org/wiki/Peterson%27s_algorithm)
 
 - - - -
 
